@@ -9,6 +9,11 @@ var CONFIG_KEYS = {
 
 function doGet(e) {
   var page = (e && e.parameter && e.parameter.page) ? String(e.parameter.page) : "";
+  var action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : "";
+
+  if (action === "listTrips") {
+    return handleListTripsGet_(e);
+  }
   if (page === "officer") {
     var siteBaseUrl = String(getProp_(CONFIG_KEYS.siteBaseUrl) || "").replace(/\/+$/, "");
     var html = []
@@ -29,14 +34,23 @@ function doGet(e) {
 function doPost(e) {
   var action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : "";
   try {
-    var body = parseJsonBody_(e);
-    if (action === "suggest") return json_(handleSuggest_(body));
-    if (action === "rsvp") return json_(handleRsvp_(body));
-    if (action === "listTrips") return json_(handleListTrips_(body));
-    if (action === "createTrip") return json_(handleCreateTrip_(body));
-    return json_({ ok: false, error: "Unknown action. Use ?action=suggest|rsvp|listTrips|createTrip." }, 400);
+    var body = parseBody_(e);
+    var result;
+
+    if (action === "suggest") result = handleSuggest_(body);
+    else if (action === "rsvp") result = handleRsvp_(body);
+    else if (action === "listTrips") result = handleListTrips_(body);
+    else if (action === "createTrip") result = handleCreateTrip_(body);
+    else return json_({ ok: false, error: "Unknown action. Use ?action=suggest|rsvp|listTrips|createTrip." }, 400);
+
+    // If request is JSON, respond JSON. Otherwise (form POST from browser), redirect to submit-result.html.
+    if (isJsonRequest_(e)) return json_(result);
+    return redirectResult_(action, result);
   } catch (err) {
-    return json_({ ok: false, error: String(err && err.message ? err.message : err) }, 500);
+    if (isJsonRequest_(e)) {
+      return json_({ ok: false, error: String(err && err.message ? err.message : err) }, 500);
+    }
+    return redirectResult_(action, { ok: false, error: String(err && err.message ? err.message : err) });
   }
 }
 
@@ -115,6 +129,26 @@ function handleRsvp_(body) {
   ]);
 
   return { ok: true };
+}
+
+function handleListTripsGet_(e) {
+  // JSONP-style GET for cross-origin usage from GitHub Pages.
+  var callback = (e && e.parameter && e.parameter.callback) ? String(e.parameter.callback) : "";
+  var data = handleListTrips_({});
+
+  if (!callback) {
+    // Plain JSON.
+    return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // Very simple callback name validation.
+  if (!/^[a-zA-Z0-9_$]+$/.test(callback)) {
+    return ContentService.createTextOutput("/* invalid callback */").setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+
+  return ContentService
+    .createTextOutput(callback + "(" + JSON.stringify(data) + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
 
 function handleListTrips_(_body) {
@@ -370,6 +404,65 @@ function parseJsonBody_(e) {
   } catch (err) {
     throw new Error("Invalid JSON body.");
   }
+}
+
+function parseBody_(e) {
+  // Prefer JSON body if present.
+  var json = {};
+  try {
+    json = parseJsonBody_(e);
+  } catch (err) {
+    json = {};
+  }
+
+  // For form POSTs, Apps Script populates e.parameter/e.parameters.
+  var out = {};
+  var k;
+  for (k in json) out[k] = json[k];
+
+  if (e && e.parameter) {
+    for (k in e.parameter) {
+      if (out[k] === undefined) out[k] = e.parameter[k];
+    }
+  }
+
+  // Preserve multi-values (checkboxes) as arrays.
+  if (e && e.parameters) {
+    for (k in e.parameters) {
+      if (e.parameters[k] && e.parameters[k].length > 1) out[k] = e.parameters[k];
+    }
+  }
+
+  return out;
+}
+
+function isJsonRequest_(e) {
+  return !!(e && e.postData && e.postData.type && String(e.postData.type).indexOf("application/json") === 0);
+}
+
+function redirectResult_(action, result) {
+  var siteBaseUrl = String(getProp_(CONFIG_KEYS.siteBaseUrl) || "").replace(/\/+$/, "");
+  var base = siteBaseUrl + "/submit-result.html";
+  var params = [];
+
+  params.push("action=" + encodeURIComponent(String(action || "")));
+  params.push("ok=" + encodeURIComponent(result && result.ok === true ? "1" : "0"));
+
+  if (result) {
+    if (result.error) params.push("error=" + encodeURIComponent(String(result.error)));
+    if (result.tripId) params.push("tripId=" + encodeURIComponent(String(result.tripId)));
+    if (result.rsvpUrl) params.push("rsvpUrl=" + encodeURIComponent(String(result.rsvpUrl)));
+  }
+
+  var url = base + "?" + params.join("&");
+
+  var html = ""
+    + "<!doctype html><meta charset='utf-8'/>"
+    + "<meta name='viewport' content='width=device-width, initial-scale=1'/>"
+    + "<meta http-equiv='refresh' content='0;url=" + url.replace(/'/g, "%27") + "'/>"
+    + "<p>Redirecting…</p>";
+
+  return HtmlService.createHtmlOutput(html);
 }
 
 function json_(obj, statusCode) {

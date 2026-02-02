@@ -79,6 +79,57 @@ function getRequiredGoogleClientId() {
   return value;
 }
 
+function initCrossOriginResultListener() {
+  window.addEventListener("message", (event) => {
+    const data = event?.data;
+    if (!data || data.utchSubmitResult !== true || !data.payload) return;
+    window.dispatchEvent(new CustomEvent("utch:submitResult", { detail: data.payload }));
+  });
+}
+
+function submitViaIframe(action, fields) {
+  const baseUrl = getRequiredConfig("appsScriptWebAppUrl");
+  if (!baseUrl) throw new Error("Missing Apps Script URL. Set UTCH_CONFIG.appsScriptWebAppUrl in assets/config.js.");
+
+  const frameName = `utch-submit-${Math.random().toString(36).slice(2)}`;
+  const iframe = document.createElement("iframe");
+  iframe.name = frameName;
+  iframe.style.display = "none";
+  document.body.appendChild(iframe);
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = `${baseUrl}?action=${encodeURIComponent(action)}`;
+  form.target = frameName;
+
+  for (const [key, value] of Object.entries(fields || {})) {
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = key;
+        input.value = String(v);
+        form.appendChild(input);
+      }
+    } else if (value !== undefined && value !== null) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = String(value);
+      form.appendChild(input);
+    }
+  }
+
+  document.body.appendChild(form);
+  form.submit();
+
+  // Cleanup later; allow time for redirect + postMessage.
+  setTimeout(() => {
+    try { form.remove(); } catch (_) {}
+    try { iframe.remove(); } catch (_) {}
+  }, 60_000);
+}
+
 // ============================================
 // Navigation & Header
 // ============================================
@@ -215,13 +266,19 @@ function initSuggestForm() {
       notes: form.notes.value.trim()
     };
 
-    try {
-      await postToAppsScript("suggest", payload);
-      setStatus(statusEl, "ok", "Sent! Thanks for the idea.");
-      form.reset();
-    } catch (err) {
-      setStatus(statusEl, "err", String(err?.message || err));
-    }
+    const onResult = (event) => {
+      const detail = event.detail || {};
+      if (detail.action !== "suggest") return;
+      window.removeEventListener("utch:submitResult", onResult);
+      if (detail.ok === "1") {
+        setStatus(statusEl, "ok", "Sent! Thanks for the idea.");
+        form.reset();
+      } else {
+        setStatus(statusEl, "err", detail.error || "Submission failed.");
+      }
+    };
+    window.addEventListener("utch:submitResult", onResult);
+    submitViaIframe("suggest", payload);
   });
 }
 
@@ -285,8 +342,7 @@ function initRsvpForm() {
     tripSelect.innerHTML = '<option value="" selected disabled>Loading trips…</option>';
 
     try {
-      const data = await postToAppsScript("listTrips", {});
-      const trips = Array.isArray(data.trips) ? data.trips : [];
+      const trips = await loadTripsJsonp();
       tripSelect.innerHTML = '<option value="" selected disabled>Select a trip…</option>';
 
       for (const trip of trips) {
@@ -309,6 +365,46 @@ function initRsvpForm() {
       tripSelect.innerHTML = '<option value="" selected disabled>Unable to load trips</option>';
       setStatus(statusEl, "err", String(err?.message || err));
     }
+  }
+
+  function loadTripsJsonp() {
+    const baseUrl = getRequiredConfig("appsScriptWebAppUrl");
+    if (!baseUrl) throw new Error("Missing Apps Script URL. Set UTCH_CONFIG.appsScriptWebAppUrl in assets/config.js.");
+    return new Promise((resolve, reject) => {
+      const callbackName = `utchTripsCb_${Math.random().toString(36).slice(2)}`;
+      const url = new URL(baseUrl);
+      url.searchParams.set("action", "listTrips");
+      url.searchParams.set("callback", callbackName);
+
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timed out loading trips."));
+      }, 8000);
+
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[callbackName]; } catch (_) {}
+        try { script.remove(); } catch (_) {}
+      }
+
+      window[callbackName] = (data) => {
+        cleanup();
+        if (!data || data.ok !== true) {
+          reject(new Error((data && data.error) ? data.error : "Unable to load trips."));
+          return;
+        }
+        resolve(Array.isArray(data.trips) ? data.trips : []);
+      };
+
+      const script = document.createElement("script");
+      script.src = url.toString();
+      script.async = true;
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("Failed to load trips script."));
+      };
+      document.head.appendChild(script);
+    });
   }
 
   if (tripSelect) {
@@ -350,10 +446,20 @@ function initRsvpForm() {
     }
 
     try {
-      await postToAppsScript("rsvp", payload);
-      setStatus(statusEl, "ok", "RSVP received. See you out there!");
-      form.reset();
-      await loadTrips();
+      const onResult = (event) => {
+        const detail = event.detail || {};
+        if (detail.action !== "rsvp") return;
+        window.removeEventListener("utch:submitResult", onResult);
+        if (detail.ok === "1") {
+          setStatus(statusEl, "ok", "RSVP received. See you out there!");
+          form.reset();
+          loadTrips();
+        } else {
+          setStatus(statusEl, "err", detail.error || "RSVP failed.");
+        }
+      };
+      window.addEventListener("utch:submitResult", onResult);
+      submitViaIframe("rsvp", payload);
     } catch (err) {
       setStatus(statusEl, "err", String(err?.message || err));
     }
@@ -482,13 +588,21 @@ function initOfficerCreateTrip() {
       gearAvailable
     };
 
-    try {
-      const data = await postToAppsScript("createTrip", payload);
-      setStatus(formStatus, "ok", `Created. Trip ID: ${data.tripId}. RSVP URL: ${data.rsvpUrl}`);
-      form.reset();
-    } catch (err) {
-      setStatus(formStatus, "err", String(err?.message || err));
-    }
+    const onResult = (event) => {
+      const detail = event.detail || {};
+      if (detail.action !== "createTrip") return;
+      window.removeEventListener("utch:submitResult", onResult);
+      if (detail.ok === "1") {
+        const tripId = detail.tripId || "(unknown)";
+        const rsvpUrl = detail.rsvpUrl || "";
+        setStatus(formStatus, "ok", `Created. Trip ID: ${tripId}. RSVP URL: ${rsvpUrl}`);
+        form.reset();
+      } else {
+        setStatus(formStatus, "err", detail.error || "Create trip failed.");
+      }
+    };
+    window.addEventListener("utch:submitResult", onResult);
+    submitViaIframe("createTrip", payload);
   });
 }
 
@@ -497,6 +611,7 @@ function initOfficerCreateTrip() {
 // ============================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  initCrossOriginResultListener();
   // Navigation
   initCurrentNav();
   initMobileMenu();
