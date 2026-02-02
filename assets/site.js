@@ -424,12 +424,10 @@ function initRsvpForm() {
 }
 
 function initOfficerCreateTrip() {
-  const formCard = document.querySelector("[data-officer-form-card]");
   const form = document.querySelector("[data-officer-form]");
   const formStatus = document.querySelector("[data-officer-form-status]");
 
-  if (!formCard || !form) return;
-  formCard.hidden = false;
+  if (!form) return;
 
   function toIsoFromLocalDatetime(value) {
     if (!value) return "";

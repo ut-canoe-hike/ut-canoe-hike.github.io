@@ -50,12 +50,11 @@ You will deploy a Google Apps Script web app using the files in `apps-script/`.
 1. Create a new Apps Script project at `https://script.google.com` (use the **club Google account**)
 2. Copy/paste these repo files into the Apps Script project:
    - `apps-script/Code.gs`
-   - `apps-script/Officer.html`
    - `apps-script/appsscript.json` (enable “Show appsscript.json” in Project Settings)
 3. In Apps Script → **Project Settings** → **Script properties**, set:
    - `UTCH_SPREADSHEET_ID` = `19bHgttW_rnmQXu8x8u4tDlT_RfsOpZgwjlgMh0JHefQ`
    - `UTCH_CALENDAR_ID` = your calendar ID (ends with `@group.calendar.google.com`)
-   - `UTCH_SITE_BASE_URL` = your GitHub Pages base URL (no trailing slash)
+    - `UTCH_SITE_BASE_URL` = your GitHub Pages base URL (no trailing slash)
    - `UTCH_OFFICER_SECRET` = a strong shared passcode for officers (e.g., 20+ chars)
    - (Optional) `UTCH_NOTIFY_EMAIL` = email to notify when someone suggests a trip
 4. Deploy: **Deploy → New deployment → Web app**
@@ -117,7 +116,5 @@ This will:
   - Apps Script isn’t deployed as a web app, or script properties aren’t set
   - No trips exist yet (create one via the officer page so the `Trips` tab is populated)
 
-- **Officer page looks unstyled**
-  - Don’t open `apps-script/Officer.html` directly from the repo
-  - Use the deployed URL: `<APPS_SCRIPT_WEB_APP_URL>?page=officer`
-  - Make sure `UTCH_SITE_BASE_URL` points to the live GitHub Pages site
+- **Officer trip creation says “Not authorized”**
+  - Wrong `Officer passcode` (it must match the Apps Script `UTCH_OFFICER_SECRET` script property)

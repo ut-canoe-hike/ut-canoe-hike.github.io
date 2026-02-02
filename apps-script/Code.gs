@@ -2,8 +2,6 @@ var CONFIG_KEYS = {
   spreadsheetId: "UTCH_SPREADSHEET_ID",
   calendarId: "UTCH_CALENDAR_ID",
   siteBaseUrl: "UTCH_SITE_BASE_URL",
-  googleClientId: "UTCH_GOOGLE_CLIENT_ID",
-  officerAllowlist: "UTCH_OFFICER_ALLOWLIST",
   notifyEmail: "UTCH_NOTIFY_EMAIL",
   officerSecret: "UTCH_OFFICER_SECRET"
 };
@@ -28,7 +26,7 @@ function doGet(e) {
   }
 
   return ContentService.createTextOutput(
-    "UTCH Apps Script is deployed. Use ?page=officer for the officer trip-creation page, or POST with ?action=suggest|rsvp|listTrips|createTrip."
+    "UTCH Apps Script is deployed. POST with ?action=suggest|rsvp|listTrips|createTrip, or GET ?action=listTrips for JSONP."
   );
 }
 

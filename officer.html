@@ -46,7 +46,7 @@
       <div class="wrap">
         <section class="hero">
           <h1>Create a Trip (Officers)</h1>
-          <p>Sign in, then fill out the form. This creates the Google Calendar event and configures RSVPs.</p>
+          <p>Fill out the form to create the Google Calendar event and configure RSVPs.</p>
           <div class="notice">
             This page is for officers only. If you don't have access, email
             <a href="mailto:utch1968@gmail.com">utch1968@gmail.com</a>.
@@ -55,20 +55,12 @@
 
         <section class="grid" aria-label="Officer tools">
           <article class="card">
-            <h2>Officer passcode</h2>
-            <p class="hint">
-              This page uses a shared officer passcode (stored in Apps Script) instead of Google Sign-In, to avoid
-              browser/network blocks.
-            </p>
-          </article>
-
-          <article class="card" data-officer-form-card hidden>
             <h2>Trip details</h2>
             <form class="form" data-officer-form>
               <div class="field">
                 <label for="officerSecret">Officer passcode</label>
-                <input id="officerSecret" name="officerSecret" type="password" required />
-                <div class="hint">Ask a current officer for the passcode. It is not displayed publicly.</div>
+                <input id="officerSecret" name="officerSecret" type="password" autocomplete="current-password" required />
+                <div class="hint">Ask a current officer for the passcode. It is stored in Apps Script and not shown publicly.</div>
               </div>
 
               <div class="row">

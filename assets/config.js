@@ -3,6 +3,5 @@
 window.UTCH_CONFIG = {
   calendarEmbedUrl: "https://calendar.google.com/calendar/embed?height=600&wkst=2&ctz=America%2FNew_York&showPrint=0&showCalendars=0&showTz=0&src=OTA3OWYwM2VhYTk5YTdmYjE3OTkyMzFjOWQ0NGVlOWMzMmY4MzdlYWQzZjBmZTQzOThkYmU4MDhhMzQ0NTZiYUBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&color=%23e67c73",
   calendarIcsUrl: "",
-  appsScriptWebAppUrl: "https://script.google.com/macros/s/AKfycbxgwowiJI6g1GIxEJ4pzHDfbpvCennpkdXhMSyhdLChb_wskU7TEby_0mSxg5JaYhHZKw/exec",
-  googleClientId: "214510082383-2lq80vl2b5pb7e32r3ap2v83954jbto9.apps.googleusercontent.com"
+  appsScriptWebAppUrl: "https://script.google.com/macros/s/AKfycbxgwowiJI6g1GIxEJ4pzHDfbpvCennpkdXhMSyhdLChb_wskU7TEby_0mSxg5JaYhHZKw/exec"
 };

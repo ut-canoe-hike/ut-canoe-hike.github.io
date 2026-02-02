@@ -5,7 +5,5 @@ window.UTCH_CONFIG = {
   // Optional public ICS URL (Settings and sharing → Integrate calendar → Secret address in iCal format)
   calendarIcsUrl: "",
   // Apps Script Web App URL (Deploy → Manage deployments → Web app)
-  appsScriptWebAppUrl: "",
-  // (Unused) Google OAuth Client ID (kept for backwards compatibility)
-  googleClientId: ""
+  appsScriptWebAppUrl: ""
 };
