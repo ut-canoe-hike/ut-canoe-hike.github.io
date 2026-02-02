@@ -74,11 +74,6 @@ async function postToAppsScript(action, payload) {
   return data;
 }
 
-function getRequiredGoogleClientId() {
-  const value = getRequiredConfig("googleClientId");
-  return value;
-}
-
 function submitViaRedirect(action, fields) {
   const baseUrl = getRequiredConfig("appsScriptWebAppUrl");
   if (!baseUrl) throw new Error("Missing Apps Script URL. Set UTCH_CONFIG.appsScriptWebAppUrl in assets/config.js.");
@@ -429,92 +424,12 @@ function initRsvpForm() {
 }
 
 function initOfficerCreateTrip() {
-  const signinMount = document.querySelector("[data-officer-signin]");
-  const authStatus = document.querySelector("[data-officer-auth-status]");
   const formCard = document.querySelector("[data-officer-form-card]");
   const form = document.querySelector("[data-officer-form]");
   const formStatus = document.querySelector("[data-officer-form-status]");
 
-  if (!signinMount || !formCard || !form) return;
-
-  const clientId = getRequiredGoogleClientId();
-  if (!clientId) {
-    setStatus(authStatus, "err", "Missing googleClientId in assets/config.js.");
-    return;
-  }
-
-  let idToken = "";
-
-  function onCredentialResponse(response) {
-    if (!response || !response.credential) {
-      setStatus(authStatus, "err", "Sign-in failed.");
-      return;
-    }
-    idToken = response.credential;
-    setStatus(authStatus, "ok", "Signed in. You can create trips now.");
-    formCard.hidden = false;
-  }
-
-  function ensureGsiScriptLoaded() {
-    if (window.google && window.google.accounts && window.google.accounts.id) return Promise.resolve(true);
-
-    return new Promise((resolve) => {
-      // Avoid injecting multiple times.
-      if (document.querySelector('script[data-gsi-client]') || document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
-        resolve(false);
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.type = "text/javascript";
-      script.async = true;
-      script.setAttribute("data-gsi-client", "true");
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
-    });
-  }
-
-  function initGsi() {
-    if (!window.google || !google.accounts || !google.accounts.id) return false;
-    try {
-      google.accounts.id.initialize({
-        client_id: clientId,
-        callback: onCredentialResponse,
-        auto_select: false
-      });
-      google.accounts.id.renderButton(signinMount, {
-        theme: "outline",
-        size: "large",
-        type: "standard",
-        shape: "pill",
-        text: "signin_with"
-      });
-      return true;
-    } catch (err) {
-      setStatus(authStatus, "err", String(err?.message || err));
-      return true;
-    }
-  }
-
-  // The GSI script may be blocked by extensions or network policies; inject + wait briefly.
-  (async function bootOfficerAuth() {
-    const injected = await ensureGsiScriptLoaded();
-
-    (function waitForGsi(attemptsLeft) {
-      if (initGsi()) return;
-      if (attemptsLeft <= 0) {
-        const origin = window.location.origin || "(unknown origin)";
-        const msg = injected
-          ? `Google Sign-In failed to initialize. Check console errors. (origin: ${origin})`
-          : `Google Sign-In failed to load. Your browser/network may be blocking accounts.google.com. (origin: ${origin})`;
-        setStatus(authStatus, "err", msg);
-        return;
-      }
-      setTimeout(() => waitForGsi(attemptsLeft - 1), 250);
-    })(20);
-  })();
+  if (!formCard || !form) return;
+  formCard.hidden = false;
 
   function toIsoFromLocalDatetime(value) {
     if (!value) return "";
@@ -527,15 +442,16 @@ function initOfficerCreateTrip() {
     event.preventDefault();
     setStatus(formStatus, "", "Redirecting...");
 
-    if (!idToken) {
-      setStatus(formStatus, "err", "Sign in first.");
+    const officerSecret = form.officerSecret ? form.officerSecret.value.trim() : "";
+    if (!officerSecret) {
+      setStatus(formStatus, "err", "Officer passcode is required.");
       return;
     }
 
     const gearAvailable = Array.from(form.querySelectorAll('input[name="gearAvailable"]:checked')).map((el) => el.value);
 
     const payload = {
-      idToken,
+      officerSecret,
       title: form.title.value.trim(),
       activity: form.activity.value,
       startDate: form.startDate.value,

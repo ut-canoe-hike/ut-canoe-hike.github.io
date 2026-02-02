@@ -4,7 +4,8 @@ var CONFIG_KEYS = {
   siteBaseUrl: "UTCH_SITE_BASE_URL",
   googleClientId: "UTCH_GOOGLE_CLIENT_ID",
   officerAllowlist: "UTCH_OFFICER_ALLOWLIST",
-  notifyEmail: "UTCH_NOTIFY_EMAIL"
+  notifyEmail: "UTCH_NOTIFY_EMAIL",
+  officerSecret: "UTCH_OFFICER_SECRET"
 };
 
 function doGet(e) {
@@ -225,12 +226,10 @@ function handleListTrips_(_body) {
 }
 
 function handleCreateTrip_(body) {
-  var idToken = requiredString_(body.idToken, "idToken");
-  var tokenInfo = verifyGoogleIdToken_(idToken);
-
-  var allowlist = parseAllowlist_(requiredProp_(CONFIG_KEYS.officerAllowlist));
-  if (!tokenInfo.email || !allowlist[String(tokenInfo.email).toLowerCase()]) {
-    return { ok: false, error: "Not authorized (officer allowlist)." };
+  var officerSecret = requiredString_(body.officerSecret, "officerSecret");
+  var expected = requiredProp_(CONFIG_KEYS.officerSecret);
+  if (officerSecret !== expected) {
+    return { ok: false, error: "Not authorized (officer passcode)." };
   }
 
   var calendarId = requiredProp_(CONFIG_KEYS.calendarId);
@@ -419,30 +418,6 @@ function normalizeGearList_(value) {
 
 function isArray_(value) {
   return Object.prototype.toString.call(value) === "[object Array]";
-}
-
-function verifyGoogleIdToken_(idToken) {
-  var clientId = requiredProp_(CONFIG_KEYS.googleClientId);
-  var url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(idToken);
-  var res = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
-  var text = res.getContentText();
-  if (res.getResponseCode() !== 200) {
-    throw new Error("Invalid Google sign-in token.");
-  }
-  var info = JSON.parse(text);
-  if (info.aud !== clientId) throw new Error("Google token audience mismatch.");
-  if (info.email && info.email_verified !== "true") throw new Error("Google email not verified.");
-  return info;
-}
-
-function parseAllowlist_(value) {
-  var out = {};
-  var parts = String(value).split(",");
-  for (var i = 0; i < parts.length; i++) {
-    var email = String(parts[i] || "").trim().toLowerCase();
-    if (email) out[email] = true;
-  }
-  return out;
 }
 
 function generateTripId_(startDate, title) {

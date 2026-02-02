@@ -6,6 +6,6 @@ window.UTCH_CONFIG = {
   calendarIcsUrl: "",
   // Apps Script Web App URL (Deploy → Manage deployments → Web app)
   appsScriptWebAppUrl: "",
-  // Google OAuth Client ID (used on the officer page for Google Sign-In)
+  // (Unused) Google OAuth Client ID (kept for backwards compatibility)
   googleClientId: ""
 };

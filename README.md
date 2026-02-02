@@ -56,15 +56,14 @@ You will deploy a Google Apps Script web app using the files in `apps-script/`.
    - `UTCH_SPREADSHEET_ID` = `19bHgttW_rnmQXu8x8u4tDlT_RfsOpZgwjlgMh0JHefQ`
    - `UTCH_CALENDAR_ID` = your calendar ID (ends with `@group.calendar.google.com`)
    - `UTCH_SITE_BASE_URL` = your GitHub Pages base URL (no trailing slash)
-   - `UTCH_GOOGLE_CLIENT_ID` = OAuth client ID for Google Sign-In (officer page)
-   - `UTCH_OFFICER_ALLOWLIST` = comma-separated officer emails allowed to create trips
+   - `UTCH_OFFICER_SECRET` = a strong shared passcode for officers (e.g., 20+ chars)
    - (Optional) `UTCH_NOTIFY_EMAIL` = email to notify when someone suggests a trip
 4. Deploy: **Deploy → New deployment → Web app**
    - Execute as: **Me**
    - Who has access: **Anyone**
 5. Copy the Web app URL and put it into `assets/config.js`:
    - `appsScriptWebAppUrl`
-6. Set `googleClientId` in `assets/config.js` to the same OAuth Client ID used by Apps Script (`UTCH_GOOGLE_CLIENT_ID`).
+6. Officer trip creation uses the passcode above (no Google Sign-In required).
 
 ---
 
@@ -73,9 +72,9 @@ You will deploy a Google Apps Script web app using the files in `apps-script/`.
 ### Create a trip (recommended)
 
 1. Open the officer page: `https://<org-or-user>.github.io/<repo>/officer.html`
-2. Sign in with Google
+2. Enter the officer passcode
 3. Fill out trip details and (optionally) select which **club gear** is available
-4. Submit
+4. Submit (you’ll be redirected briefly to a result page and then back)
 
 This will:
 - Create the Google Calendar event (consistent formatting)
