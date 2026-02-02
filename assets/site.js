@@ -375,11 +375,6 @@ function initOfficerCreateTrip() {
     return;
   }
 
-  if (!window.google || !google.accounts || !google.accounts.id) {
-    setStatus(authStatus, "err", "Google Sign-In failed to load. Try refreshing.");
-    return;
-  }
-
   let idToken = "";
 
   function onCredentialResponse(response) {
@@ -392,23 +387,37 @@ function initOfficerCreateTrip() {
     formCard.hidden = false;
   }
 
-  try {
-    google.accounts.id.initialize({
-      client_id: clientId,
-      callback: onCredentialResponse,
-      auto_select: false
-    });
-    google.accounts.id.renderButton(signinMount, {
-      theme: "outline",
-      size: "large",
-      type: "standard",
-      shape: "pill",
-      text: "signin_with"
-    });
-  } catch (err) {
-    setStatus(authStatus, "err", String(err?.message || err));
-    return;
+  function initGsi() {
+    if (!window.google || !google.accounts || !google.accounts.id) return false;
+    try {
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: onCredentialResponse,
+        auto_select: false
+      });
+      google.accounts.id.renderButton(signinMount, {
+        theme: "outline",
+        size: "large",
+        type: "standard",
+        shape: "pill",
+        text: "signin_with"
+      });
+      return true;
+    } catch (err) {
+      setStatus(authStatus, "err", String(err?.message || err));
+      return true;
+    }
   }
+
+  // The GSI script is loaded async; wait briefly if it isn't ready at DOMContentLoaded.
+  (function waitForGsi(attemptsLeft) {
+    if (initGsi()) return;
+    if (attemptsLeft <= 0) {
+      setStatus(authStatus, "err", "Google Sign-In failed to load. Try refreshing.");
+      return;
+    }
+    setTimeout(() => waitForGsi(attemptsLeft - 1), 250);
+  })(20);
 
   function toIsoFromLocalDatetime(value) {
     if (!value) return "";
