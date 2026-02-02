@@ -15,6 +15,14 @@ The only “backend” is a Google **Apps Script** web app that writes to a Goog
 
 ---
 
+## How the pieces fit together (plain language)
+
+- **GitHub Pages repo (this code):** the public website people visit and fill out.
+- **Apps Script:** the “helper” that receives form submissions and writes data.
+- **Google Sheets & Calendar:** where the data actually lives (Sheets = records, Calendar = public schedule).
+
+---
+
 ## Quick links (once set up)
 
 - Public site: `https://<org-or-user>.github.io/<repo>/`
@@ -45,16 +53,22 @@ The only “backend” is a Google **Apps Script** web app that writes to a Goog
 
 ### 3) Apps Script backend (forms + officer tools)
 
-You will deploy a Google Apps Script web app using the files in `apps-script/`.
+Recommended: use **clasp** to sync Apps Script with this repo (no copy/paste).
 
+**If using clasp (recommended):**
+1. Make sure `Code.js` + `appsscript.json` are present in the repo root (this is the Apps Script project).
+2. Run: `clasp push`
+3. Deploy: `clasp deploy`
+
+**If not using clasp (manual copy/paste):**
 1. Create a new Apps Script project at `https://script.google.com` (use the **club Google account**)
 2. Copy/paste these repo files into the Apps Script project:
-   - `apps-script/Code.gs`
-   - `apps-script/appsscript.json` (enable “Show appsscript.json” in Project Settings)
+   - `Code.js`
+   - `appsscript.json` (enable “Show appsscript.json” in Project Settings)
 3. In Apps Script → **Project Settings** → **Script properties**, set:
    - `UTCH_SPREADSHEET_ID` = `19bHgttW_rnmQXu8x8u4tDlT_RfsOpZgwjlgMh0JHefQ`
    - `UTCH_CALENDAR_ID` = your calendar ID (ends with `@group.calendar.google.com`)
-    - `UTCH_SITE_BASE_URL` = your GitHub Pages base URL (no trailing slash)
+   - `UTCH_SITE_BASE_URL` = your GitHub Pages base URL (no trailing slash)
    - `UTCH_OFFICER_SECRET` = a strong shared passcode for officers (e.g., 20+ chars)
    - (Optional) `UTCH_NOTIFY_EMAIL` = email to notify when someone suggests a trip
 4. Deploy: **Deploy → New deployment → Web app**
