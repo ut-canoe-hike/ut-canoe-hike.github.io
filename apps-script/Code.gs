@@ -43,14 +43,14 @@ function doPost(e) {
     else if (action === "createTrip") result = handleCreateTrip_(body);
     else return json_({ ok: false, error: "Unknown action. Use ?action=suggest|rsvp|listTrips|createTrip." }, 400);
 
-    // If request is JSON, respond JSON. Otherwise (form POST from browser), redirect to submit-result.html.
+    // If request is JSON, respond JSON. Otherwise (form POST from browser), return HTML that postMessages the result.
     if (isJsonRequest_(e)) return json_(result);
-    return redirectResult_(action, result);
+    return htmlPostMessageResult_(action, result);
   } catch (err) {
     if (isJsonRequest_(e)) {
       return json_({ ok: false, error: String(err && err.message ? err.message : err) }, 500);
     }
-    return redirectResult_(action, { ok: false, error: String(err && err.message ? err.message : err) });
+    return htmlPostMessageResult_(action, { ok: false, error: String(err && err.message ? err.message : err) });
   }
 }
 
@@ -59,7 +59,7 @@ function handleSuggest_(body) {
   var idea = requiredString_(body.idea, "idea");
 
   var spreadsheet = SpreadsheetApp.openById(requiredProp_(CONFIG_KEYS.spreadsheetId));
-  var sheet = ensureSheet_(spreadsheet, "Suggestions", [
+  var info = ensureSheetColumns_(spreadsheet, "Suggestions", [
     "submittedAt",
     "name",
     "email",
@@ -69,17 +69,18 @@ function handleSuggest_(body) {
     "timing",
     "notes"
   ]);
+  var sheet = info.sheet;
 
-  sheet.appendRow([
-    new Date(),
-    name,
-    optionalString_(body.email),
-    optionalString_(body.willingToLead),
-    idea,
-    optionalString_(body.location),
-    optionalString_(body.timing),
-    optionalString_(body.notes)
-  ]);
+  appendRowByColumns_(sheet, info.colByName, {
+    "submittedAt": new Date(),
+    "name": name,
+    "email": optionalString_(body.email),
+    "willingToLead": optionalString_(body.willingToLead),
+    "idea": idea,
+    "location": optionalString_(body.location),
+    "timing": optionalString_(body.timing),
+    "notes": optionalString_(body.notes)
+  });
 
   var notifyEmail = String(getProp_(CONFIG_KEYS.notifyEmail) || "").trim();
   if (notifyEmail) {
@@ -108,7 +109,7 @@ function handleRsvp_(body) {
   var contact = requiredString_(body.contact, "contact");
 
   var spreadsheet = SpreadsheetApp.openById(requiredProp_(CONFIG_KEYS.spreadsheetId));
-  var sheet = ensureSheet_(spreadsheet, "RSVPs", [
+  var info = ensureSheetColumns_(spreadsheet, "RSVPs", [
     "submittedAt",
     "tripId",
     "name",
@@ -117,16 +118,17 @@ function handleRsvp_(body) {
     "gearNeeded",
     "notes"
   ]);
+  var sheet = info.sheet;
 
-  sheet.appendRow([
-    new Date(),
-    tripId,
-    name,
-    contact,
-    optionalString_(body.carpool),
-    normalizeGearList_(body.gearNeeded).join(","),
-    optionalString_(body.notes)
-  ]);
+  appendRowByColumns_(sheet, info.colByName, {
+    "submittedAt": new Date(),
+    "tripId": tripId,
+    "name": name,
+    "contact": contact,
+    "carpool": optionalString_(body.carpool),
+    "gearNeeded": normalizeGearList_(body.gearNeeded).join(","),
+    "notes": optionalString_(body.notes)
+  });
 
   return { ok: true };
 }
@@ -153,10 +155,26 @@ function handleListTripsGet_(e) {
 
 function handleListTrips_(_body) {
   var spreadsheet = SpreadsheetApp.openById(requiredProp_(CONFIG_KEYS.spreadsheetId));
-  var sheet = spreadsheet.getSheetByName("Trips");
+  var info = ensureSheetColumns_(spreadsheet, "Trips", [
+    "createdAt",
+    "tripId",
+    "eventId",
+    "title",
+    "start",
+    "end",
+    "location",
+    "leaderName",
+    "difficulty",
+    "gearAvailable",
+    "isAllDay"
+  ]);
+  var sheet = info.sheet;
   if (!sheet) return { ok: true, trips: [] };
 
-  var values = sheet.getDataRange().getValues();
+  var lastCol = sheet.getLastColumn();
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { ok: true, trips: [] };
+  var values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
   if (values.length < 2) return { ok: true, trips: [] };
 
   var header = [];
@@ -182,6 +200,7 @@ function handleListTrips_(_body) {
     var location = idx.location !== undefined ? String(row[idx.location] || "").trim() : "";
     var difficulty = idx.difficulty !== undefined ? String(row[idx.difficulty] || "").trim() : "";
     var gearAvailableRaw = idx.gearAvailable !== undefined ? String(row[idx.gearAvailable] || "") : "";
+    var isAllDay = idx.isAllDay !== undefined ? String(row[idx.isAllDay] || "").trim() : "0";
 
     trips.push({
       tripId: tripId,
@@ -189,7 +208,8 @@ function handleListTrips_(_body) {
       start: start.toISOString(),
       location: location,
       difficulty: difficulty,
-      gearAvailable: normalizeGearList_(gearAvailableRaw)
+      gearAvailable: normalizeGearList_(gearAvailableRaw),
+      isAllDay: isAllDay === "1" || isAllDay.toLowerCase() === "true"
     });
   }
 
@@ -223,9 +243,40 @@ function handleCreateTrip_(body) {
   var notes = optionalString_(body.notes);
   var gearAvailable = normalizeGearList_(body.gearAvailable);
 
-  var start = parseDateTime_(requiredString_(body.start, "start"));
-  var end = parseDateTime_(requiredString_(body.end, "end"));
-  if (end.getTime() <= start.getTime()) throw new Error("end must be after start");
+  var start;
+  var end;
+  var isAllDay = false;
+
+  if (body.start) {
+    // Backwards compatible (old datetime-local payload)
+    start = parseDateTime_(requiredString_(body.start, "start"));
+    end = parseDateTime_(requiredString_(body.end, "end"));
+    if (end.getTime() <= start.getTime()) throw new Error("end must be after start");
+  } else {
+    var startDate = requiredString_(body.startDate, "startDate");
+    var endDate = optionalString_(body.endDate) || startDate;
+    var startTime = optionalString_(body.startTime);
+    var endTime = optionalString_(body.endTime);
+
+    if (!startTime) {
+      // All-day event
+      isAllDay = true;
+      start = parseDateOnly_(startDate);
+      end = parseDateOnly_(endDate);
+      if (end.getTime() < start.getTime()) throw new Error("endDate must be on/after startDate");
+      // Google Calendar all-day end is exclusive; treat officer end date as inclusive.
+      end = addDays_(end, 1);
+    } else {
+      start = parseDateAndTime_(startDate, startTime);
+      if (endTime) {
+        end = parseDateAndTime_(endDate, endTime);
+      } else {
+        // Default to 2 hours if end time omitted.
+        end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      }
+      if (end.getTime() <= start.getTime()) throw new Error("end must be after start");
+    }
+  }
 
   var tripId = generateTripId_(start, title);
   var rsvpUrl = siteBaseUrl + "/rsvp.html?tripId=" + encodeURIComponent(tripId);
@@ -246,13 +297,23 @@ function handleCreateTrip_(body) {
   var calendar = CalendarApp.getCalendarById(calendarId);
   if (!calendar) throw new Error("Calendar not found. Check UTCH_CALENDAR_ID.");
 
-  var event = calendar.createEvent(title, start, end, {
-    location: location || "",
-    description: description
-  });
+  var event;
+  if (isAllDay) {
+    // If it's a single-day all-day event, use the single-date overload.
+    if (end.getTime() === addDays_(start, 1).getTime()) {
+      event = calendar.createAllDayEvent(title, start, { location: location || "", description: description });
+    } else {
+      event = calendar.createAllDayEvent(title, start, end, { location: location || "", description: description });
+    }
+  } else {
+    event = calendar.createEvent(title, start, end, {
+      location: location || "",
+      description: description
+    });
+  }
 
   var spreadsheet = SpreadsheetApp.openById(requiredProp_(CONFIG_KEYS.spreadsheetId));
-  var tripsSheet = ensureSheet_(spreadsheet, "Trips", [
+  var info = ensureSheetColumns_(spreadsheet, "Trips", [
     "createdAt",
     "tripId",
     "eventId",
@@ -262,21 +323,24 @@ function handleCreateTrip_(body) {
     "location",
     "leaderName",
     "difficulty",
-    "gearAvailable"
+    "gearAvailable",
+    "isAllDay"
   ]);
+  var tripsSheet = info.sheet;
 
-  tripsSheet.appendRow([
-    new Date(),
-    tripId,
-    event.getId(),
-    title,
-    start.toISOString(),
-    end.toISOString(),
-    location || "",
-    leaderName,
-    difficulty,
-    gearAvailable.join(",")
-  ]);
+  appendRowByColumns_(tripsSheet, info.colByName, {
+    "createdAt": new Date(),
+    "tripId": tripId,
+    "eventId": event.getId(),
+    "title": title,
+    "start": start.toISOString(),
+    "end": end.toISOString(),
+    "location": location || "",
+    "leaderName": leaderName,
+    "difficulty": difficulty,
+    "gearAvailable": gearAvailable.join(","),
+    "isAllDay": isAllDay ? "1" : "0"
+  });
 
   return {
     ok: true,
@@ -395,6 +459,26 @@ function parseDateTime_(value) {
   return d;
 }
 
+function parseDateOnly_(value) {
+  // value: YYYY-MM-DD
+  var m = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) throw new Error("Invalid date: " + value);
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function parseDateAndTime_(dateValue, timeValue) {
+  // dateValue: YYYY-MM-DD, timeValue: HH:MM
+  var dm = String(dateValue).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  var tm = String(timeValue).match(/^(\d{2}):(\d{2})$/);
+  if (!dm) throw new Error("Invalid date: " + dateValue);
+  if (!tm) throw new Error("Invalid time: " + timeValue);
+  return new Date(Number(dm[1]), Number(dm[2]) - 1, Number(dm[3]), Number(tm[1]), Number(tm[2]));
+}
+
+function addDays_(dateObj, days) {
+  return new Date(dateObj.getTime() + Number(days) * 24 * 60 * 60 * 1000);
+}
+
 function parseJsonBody_(e) {
   if (!e || !e.postData || !e.postData.contents) return {};
   var raw = String(e.postData.contents || "");
@@ -440,27 +524,25 @@ function isJsonRequest_(e) {
   return !!(e && e.postData && e.postData.type && String(e.postData.type).indexOf("application/json") === 0);
 }
 
-function redirectResult_(action, result) {
-  var siteBaseUrl = String(getProp_(CONFIG_KEYS.siteBaseUrl) || "").replace(/\/+$/, "");
-  var base = siteBaseUrl + "/submit-result.html";
-  var params = [];
-
-  params.push("action=" + encodeURIComponent(String(action || "")));
-  params.push("ok=" + encodeURIComponent(result && result.ok === true ? "1" : "0"));
-
+function htmlPostMessageResult_(action, result) {
+  var payload = {
+    action: String(action || ""),
+    ok: (result && result.ok === true) ? "1" : "0"
+  };
   if (result) {
-    if (result.error) params.push("error=" + encodeURIComponent(String(result.error)));
-    if (result.tripId) params.push("tripId=" + encodeURIComponent(String(result.tripId)));
-    if (result.rsvpUrl) params.push("rsvpUrl=" + encodeURIComponent(String(result.rsvpUrl)));
+    if (result.error) payload.error = String(result.error);
+    if (result.tripId) payload.tripId = String(result.tripId);
+    if (result.rsvpUrl) payload.rsvpUrl = String(result.rsvpUrl);
   }
 
-  var url = base + "?" + params.join("&");
-
+  var json = JSON.stringify(payload).replace(/</g, "\\u003c");
   var html = ""
     + "<!doctype html><meta charset='utf-8'/>"
     + "<meta name='viewport' content='width=device-width, initial-scale=1'/>"
-    + "<meta http-equiv='refresh' content='0;url=" + url.replace(/'/g, "%27") + "'/>"
-    + "<p>Redirecting…</p>";
+    + "<script>"
+    + "try{if(window.parent&&window.parent!==window){window.parent.postMessage({utchSubmitResult:true,payload:" + json + "},'*');}}catch(e){}"
+    + "</script>"
+    + "<p>Submitted.</p>";
 
   return HtmlService.createHtmlOutput(html);
 }
@@ -489,6 +571,61 @@ function ensureSheet_(spreadsheet, name, header) {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+function ensureSheetColumns_(spreadsheet, name, requiredHeaders) {
+  var sheet = spreadsheet.getSheetByName(name);
+  if (!sheet) sheet = spreadsheet.insertSheet(name);
+
+  var existingLastCol = Math.max(sheet.getLastColumn(), 1);
+  var existing = sheet.getRange(1, 1, 1, existingLastCol).getValues()[0];
+
+  // Build map of existing header names -> column index (1-based).
+  var colByName = {};
+  var lastNamedCol = 0;
+  for (var i = 0; i < existing.length; i++) {
+    var nameCell = String(existing[i] || "").trim();
+    if (!nameCell) continue;
+    colByName[nameCell] = i + 1;
+    if (i + 1 > lastNamedCol) lastNamedCol = i + 1;
+  }
+
+  // If header row is empty, initialize it.
+  var headerEmpty = lastNamedCol === 0;
+  if (headerEmpty) {
+    sheet.getRange(1, 1, 1, requiredHeaders.length).setValues([requiredHeaders]);
+    sheet.setFrozenRows(1);
+    colByName = {};
+    for (var h = 0; h < requiredHeaders.length; h++) colByName[requiredHeaders[h]] = h + 1;
+    return { sheet: sheet, colByName: colByName };
+  }
+
+  // Append missing required headers at the end (do NOT rename/reorder existing columns).
+  var col = sheet.getLastColumn();
+  for (var r = 0; r < requiredHeaders.length; r++) {
+    var req = requiredHeaders[r];
+    if (!colByName[req]) {
+      col += 1;
+      sheet.getRange(1, col).setValue(req);
+      colByName[req] = col;
+    }
+  }
+
+  sheet.setFrozenRows(1);
+  return { sheet: sheet, colByName: colByName };
+}
+
+function appendRowByColumns_(sheet, colByName, valuesByName) {
+  var lastCol = sheet.getLastColumn();
+  var row = [];
+  for (var i = 0; i < lastCol; i++) row.push("");
+  for (var key in valuesByName) {
+    if (!valuesByName.hasOwnProperty(key)) continue;
+    var col = colByName[key];
+    if (!col) continue;
+    row[col - 1] = valuesByName[key];
+  }
+  sheet.appendRow(row);
 }
 
 function requiredString_(value, name) {

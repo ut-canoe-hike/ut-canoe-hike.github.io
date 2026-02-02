@@ -270,6 +270,7 @@ function initSuggestForm() {
       const detail = event.detail || {};
       if (detail.action !== "suggest") return;
       window.removeEventListener("utch:submitResult", onResult);
+      clearTimeout(timeoutId);
       if (detail.ok === "1") {
         setStatus(statusEl, "ok", "Sent! Thanks for the idea.");
         form.reset();
@@ -278,6 +279,10 @@ function initSuggestForm() {
       }
     };
     window.addEventListener("utch:submitResult", onResult);
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener("utch:submitResult", onResult);
+      setStatus(statusEl, "err", "Submission timed out. Please try again.");
+    }, 15000);
     submitViaIframe("suggest", payload);
   });
 }
@@ -297,8 +302,11 @@ function initRsvpForm() {
   function formatTripLabel(trip) {
     const start = new Date(trip.start);
     const date = start.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-    const time = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-    const parts = [`${date} ${time}`, `— ${trip.title}`];
+    const parts = [date, `— ${trip.title}`];
+    if (!trip.isAllDay) {
+      const time = start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      parts[0] = `${date} ${time}`;
+    }
     if (trip.location) parts.push(`(${trip.location})`);
     return parts.join(" ");
   }
@@ -445,24 +453,25 @@ function initRsvpForm() {
       return;
     }
 
-    try {
-      const onResult = (event) => {
-        const detail = event.detail || {};
-        if (detail.action !== "rsvp") return;
-        window.removeEventListener("utch:submitResult", onResult);
-        if (detail.ok === "1") {
-          setStatus(statusEl, "ok", "RSVP received. See you out there!");
-          form.reset();
-          loadTrips();
-        } else {
-          setStatus(statusEl, "err", detail.error || "RSVP failed.");
-        }
-      };
-      window.addEventListener("utch:submitResult", onResult);
-      submitViaIframe("rsvp", payload);
-    } catch (err) {
-      setStatus(statusEl, "err", String(err?.message || err));
-    }
+    const onResult = (event) => {
+      const detail = event.detail || {};
+      if (detail.action !== "rsvp") return;
+      window.removeEventListener("utch:submitResult", onResult);
+      clearTimeout(timeoutId);
+      if (detail.ok === "1") {
+        setStatus(statusEl, "ok", "RSVP received. See you out there!");
+        form.reset();
+        loadTrips();
+      } else {
+        setStatus(statusEl, "err", detail.error || "RSVP failed.");
+      }
+    };
+    window.addEventListener("utch:submitResult", onResult);
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener("utch:submitResult", onResult);
+      setStatus(statusEl, "err", "RSVP timed out. Please try again.");
+    }, 15000);
+    submitViaIframe("rsvp", payload);
   });
 }
 
@@ -576,8 +585,10 @@ function initOfficerCreateTrip() {
       idToken,
       title: form.title.value.trim(),
       activity: form.activity.value,
-      start: toIsoFromLocalDatetime(form.start.value),
-      end: toIsoFromLocalDatetime(form.end.value),
+      startDate: form.startDate.value,
+      startTime: form.startTime.value,
+      endDate: form.endDate.value,
+      endTime: form.endTime.value,
       location: form.location.value.trim(),
       difficulty: form.difficulty.value,
       meetTime: form.meetTime.value.trim(),
@@ -592,6 +603,7 @@ function initOfficerCreateTrip() {
       const detail = event.detail || {};
       if (detail.action !== "createTrip") return;
       window.removeEventListener("utch:submitResult", onResult);
+      clearTimeout(timeoutId);
       if (detail.ok === "1") {
         const tripId = detail.tripId || "(unknown)";
         const rsvpUrl = detail.rsvpUrl || "";
@@ -602,6 +614,10 @@ function initOfficerCreateTrip() {
       }
     };
     window.addEventListener("utch:submitResult", onResult);
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener("utch:submitResult", onResult);
+      setStatus(formStatus, "err", "Create trip timed out. Please try again.");
+    }, 15000);
     submitViaIframe("createTrip", payload);
   });
 }

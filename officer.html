@@ -79,6 +79,7 @@
                   <select id="activity" name="activity">
                     <option value="">—</option>
                     <option value="Hike">Hike</option>
+                    <option value="Backpacking">Backpacking</option>
                     <option value="Canoe/Kayak">Canoe/Kayak</option>
                     <option value="Camping">Camping</option>
                     <option value="Climbing">Climbing</option>
@@ -89,12 +90,23 @@
 
               <div class="row">
                 <div class="field">
-                  <label for="start">Start (date/time)</label>
-                  <input id="start" name="start" type="datetime-local" required />
+                  <label for="startDate">Start date</label>
+                  <input id="startDate" name="startDate" type="date" required />
                 </div>
                 <div class="field">
-                  <label for="end">End (date/time)</label>
-                  <input id="end" name="end" type="datetime-local" required />
+                  <label for="startTime">Start time (optional)</label>
+                  <input id="startTime" name="startTime" type="time" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="endDate">End date (optional)</label>
+                  <input id="endDate" name="endDate" type="date" />
+                </div>
+                <div class="field">
+                  <label for="endTime">End time (optional)</label>
+                  <input id="endTime" name="endTime" type="time" />
                 </div>
               </div>
 
