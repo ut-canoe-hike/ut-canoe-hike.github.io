@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/styles.css" />
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" defer crossorigin="anonymous"></script>
     <script src="assets/config.js" defer></script>
     <script src="assets/site.js" defer></script>
   </head>
@@ -61,8 +61,8 @@
             <div data-officer-signin></div>
             <div class="status" data-officer-auth-status hidden></div>
             <div class="hint" style="margin-top: 12px;">
-              If you see an OAuth origin error, the Google Client ID must allow the origin
-              <code>https://ut-canoe-hike.github.io</code>.
+              If sign-in fails to load, check that your browser/ad-blocker/network allows <code>accounts.google.com</code>.
+              If you see an OAuth origin error, the Google Client ID must allow <code>https://ut-canoe-hike.github.io</code>.
             </div>
           </article>
 
@@ -175,4 +175,3 @@
     </footer>
   </body>
 </html>
-
