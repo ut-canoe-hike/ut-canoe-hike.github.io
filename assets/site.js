@@ -79,28 +79,22 @@ function getRequiredGoogleClientId() {
   return value;
 }
 
-function initCrossOriginResultListener() {
-  window.addEventListener("message", (event) => {
-    const data = event?.data;
-    if (!data || data.utchSubmitResult !== true || !data.payload) return;
-    window.dispatchEvent(new CustomEvent("utch:submitResult", { detail: data.payload }));
-  });
-}
-
-function submitViaIframe(action, fields) {
+function submitViaRedirect(action, fields) {
   const baseUrl = getRequiredConfig("appsScriptWebAppUrl");
   if (!baseUrl) throw new Error("Missing Apps Script URL. Set UTCH_CONFIG.appsScriptWebAppUrl in assets/config.js.");
-
-  const frameName = `utch-submit-${Math.random().toString(36).slice(2)}`;
-  const iframe = document.createElement("iframe");
-  iframe.name = frameName;
-  iframe.style.display = "none";
-  document.body.appendChild(iframe);
 
   const form = document.createElement("form");
   form.method = "POST";
   form.action = `${baseUrl}?action=${encodeURIComponent(action)}`;
-  form.target = frameName;
+  form.target = "_self";
+
+  // Return to the current page after submission result.
+  const returnTo = `${window.location.pathname}${window.location.search}`;
+  const returnInput = document.createElement("input");
+  returnInput.type = "hidden";
+  returnInput.name = "returnTo";
+  returnInput.value = returnTo;
+  form.appendChild(returnInput);
 
   for (const [key, value] of Object.entries(fields || {})) {
     if (Array.isArray(value)) {
@@ -122,12 +116,6 @@ function submitViaIframe(action, fields) {
 
   document.body.appendChild(form);
   form.submit();
-
-  // Cleanup later; allow time for redirect + postMessage.
-  setTimeout(() => {
-    try { form.remove(); } catch (_) {}
-    try { iframe.remove(); } catch (_) {}
-  }, 60_000);
 }
 
 // ============================================
@@ -247,7 +235,7 @@ function initSuggestForm() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setStatus(statusEl, "", "Sending...");
+    setStatus(statusEl, "", "Redirecting...");
 
     const honeypot = form.querySelector('input[name="website"]')?.value || "";
     if (honeypot) {
@@ -266,24 +254,7 @@ function initSuggestForm() {
       notes: form.notes.value.trim()
     };
 
-    const onResult = (event) => {
-      const detail = event.detail || {};
-      if (detail.action !== "suggest") return;
-      window.removeEventListener("utch:submitResult", onResult);
-      clearTimeout(timeoutId);
-      if (detail.ok === "1") {
-        setStatus(statusEl, "ok", "Sent! Thanks for the idea.");
-        form.reset();
-      } else {
-        setStatus(statusEl, "err", detail.error || "Submission failed.");
-      }
-    };
-    window.addEventListener("utch:submitResult", onResult);
-    const timeoutId = setTimeout(() => {
-      window.removeEventListener("utch:submitResult", onResult);
-      setStatus(statusEl, "err", "Submission timed out. Please try again.");
-    }, 15000);
-    submitViaIframe("suggest", payload);
+    submitViaRedirect("suggest", payload);
   });
 }
 
@@ -425,7 +396,7 @@ function initRsvpForm() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setStatus(statusEl, "", "Sending...");
+    setStatus(statusEl, "", "Redirecting...");
 
     const honeypot = form.querySelector('input[name="website"]')?.value || "";
     if (honeypot) {
@@ -453,25 +424,7 @@ function initRsvpForm() {
       return;
     }
 
-    const onResult = (event) => {
-      const detail = event.detail || {};
-      if (detail.action !== "rsvp") return;
-      window.removeEventListener("utch:submitResult", onResult);
-      clearTimeout(timeoutId);
-      if (detail.ok === "1") {
-        setStatus(statusEl, "ok", "RSVP received. See you out there!");
-        form.reset();
-        loadTrips();
-      } else {
-        setStatus(statusEl, "err", detail.error || "RSVP failed.");
-      }
-    };
-    window.addEventListener("utch:submitResult", onResult);
-    const timeoutId = setTimeout(() => {
-      window.removeEventListener("utch:submitResult", onResult);
-      setStatus(statusEl, "err", "RSVP timed out. Please try again.");
-    }, 15000);
-    submitViaIframe("rsvp", payload);
+    submitViaRedirect("rsvp", payload);
   });
 }
 
@@ -572,7 +525,7 @@ function initOfficerCreateTrip() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setStatus(formStatus, "", "Creating...");
+    setStatus(formStatus, "", "Redirecting...");
 
     if (!idToken) {
       setStatus(formStatus, "err", "Sign in first.");
@@ -599,26 +552,7 @@ function initOfficerCreateTrip() {
       gearAvailable
     };
 
-    const onResult = (event) => {
-      const detail = event.detail || {};
-      if (detail.action !== "createTrip") return;
-      window.removeEventListener("utch:submitResult", onResult);
-      clearTimeout(timeoutId);
-      if (detail.ok === "1") {
-        const tripId = detail.tripId || "(unknown)";
-        const rsvpUrl = detail.rsvpUrl || "";
-        setStatus(formStatus, "ok", `Created. Trip ID: ${tripId}. RSVP URL: ${rsvpUrl}`);
-        form.reset();
-      } else {
-        setStatus(formStatus, "err", detail.error || "Create trip failed.");
-      }
-    };
-    window.addEventListener("utch:submitResult", onResult);
-    const timeoutId = setTimeout(() => {
-      window.removeEventListener("utch:submitResult", onResult);
-      setStatus(formStatus, "err", "Create trip timed out. Please try again.");
-    }, 15000);
-    submitViaIframe("createTrip", payload);
+    submitViaRedirect("createTrip", payload);
   });
 }
 
@@ -627,7 +561,6 @@ function initOfficerCreateTrip() {
 // ============================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  initCrossOriginResultListener();
   // Navigation
   initCurrentNav();
   initMobileMenu();

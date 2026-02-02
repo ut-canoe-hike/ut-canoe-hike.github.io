@@ -35,6 +35,8 @@ function doPost(e) {
   var action = (e && e.parameter && e.parameter.action) ? String(e.parameter.action) : "";
   try {
     var body = parseBody_(e);
+    // Used by redirectResult_ to send users back to the originating page.
+    this._utchReturnTo = body && body.returnTo ? String(body.returnTo) : "";
     var result;
 
     if (action === "suggest") result = handleSuggest_(body);
@@ -43,14 +45,16 @@ function doPost(e) {
     else if (action === "createTrip") result = handleCreateTrip_(body);
     else return json_({ ok: false, error: "Unknown action. Use ?action=suggest|rsvp|listTrips|createTrip." }, 400);
 
-    // If request is JSON, respond JSON. Otherwise (form POST from browser), return HTML that postMessages the result.
+    // If request is JSON, respond JSON. Otherwise (form POST), redirect back to the site.
     if (isJsonRequest_(e)) return json_(result);
-    return htmlPostMessageResult_(action, result);
+    return htmlPostMessageResult_(action, result, this._utchReturnTo);
   } catch (err) {
     if (isJsonRequest_(e)) {
       return json_({ ok: false, error: String(err && err.message ? err.message : err) }, 500);
     }
-    return htmlPostMessageResult_(action, { ok: false, error: String(err && err.message ? err.message : err) });
+    var rt = "";
+    try { rt = (e && e.parameter && e.parameter.returnTo) ? String(e.parameter.returnTo) : ""; } catch (_) {}
+    return htmlPostMessageResult_(action, { ok: false, error: String(err && err.message ? err.message : err) }, rt);
   }
 }
 
@@ -524,25 +528,39 @@ function isJsonRequest_(e) {
   return !!(e && e.postData && e.postData.type && String(e.postData.type).indexOf("application/json") === 0);
 }
 
-function htmlPostMessageResult_(action, result) {
-  var payload = {
-    action: String(action || ""),
-    ok: (result && result.ok === true) ? "1" : "0"
-  };
+function htmlPostMessageResult_(action, result, returnTo) {
+  // Backwards name kept to avoid editing all call sites; now does redirect.
+  return redirectResult_(action, result, returnTo);
+}
+
+function redirectResult_(action, result, returnTo) {
+  var siteBaseUrl = String(getProp_(CONFIG_KEYS.siteBaseUrl) || "").replace(/\/+$/, "");
+  var base = siteBaseUrl + "/submit-result.html";
+
+  var params = [];
+  params.push("action=" + encodeURIComponent(String(action || "")));
+  params.push("ok=" + encodeURIComponent(result && result.ok === true ? "1" : "0"));
+
   if (result) {
-    if (result.error) payload.error = String(result.error);
-    if (result.tripId) payload.tripId = String(result.tripId);
-    if (result.rsvpUrl) payload.rsvpUrl = String(result.rsvpUrl);
+    if (result.error) params.push("error=" + encodeURIComponent(String(result.error)));
+    if (result.tripId) params.push("tripId=" + encodeURIComponent(String(result.tripId)));
+    if (result.rsvpUrl) params.push("rsvpUrl=" + encodeURIComponent(String(result.rsvpUrl)));
   }
 
-  var json = JSON.stringify(payload).replace(/</g, "\\u003c");
+  // Allow returning to a relative path on the same site.
+  var rt = String(returnTo || "").trim();
+  if (!rt && this && this._utchReturnTo) rt = String(this._utchReturnTo || "").trim();
+  if (rt && rt.indexOf("://") === -1 && rt.charAt(0) === "/") {
+    params.push("returnTo=" + encodeURIComponent(rt));
+  }
+
+  var url = base + "?" + params.join("&");
+
   var html = ""
     + "<!doctype html><meta charset='utf-8'/>"
     + "<meta name='viewport' content='width=device-width, initial-scale=1'/>"
-    + "<script>"
-    + "try{if(window.parent&&window.parent!==window){window.parent.postMessage({utchSubmitResult:true,payload:" + json + "},'*');}}catch(e){}"
-    + "</script>"
-    + "<p>Submitted.</p>";
+    + "<meta http-equiv='refresh' content='0;url=" + url.replace(/'/g, "%27") + "'/>"
+    + "<p>Redirecting…</p>";
 
   return HtmlService.createHtmlOutput(html);
 }
