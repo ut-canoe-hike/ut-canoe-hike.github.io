@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Calendar | UT Canoe & Hiking Club</title>
+    <meta
+      name="description"
+      content="View upcoming trips and events from the UT Canoe & Hiking Club."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/config.js" defer></script>
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="index.html">
+          <img src="UTCH_logo.jpg" alt="UTCH logo" />
+          <div class="title">
+            <strong>UT Canoe &amp; Hiking Club</strong>
+            <span>University of Tennessee</span>
+          </div>
+        </a>
+
+        <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="calendar.html">Calendar</a>
+          <a href="rsvp.html">RSVP</a>
+          <a href="suggest.html">Suggest</a>
+          <a href="about.html">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <section class="hero">
+          <h1>Upcoming Trips</h1>
+          <p>
+            This is the official UTCH trip schedule. View upcoming adventures here and subscribe to the calendar in your favorite app.
+          </p>
+        </section>
+
+        <section class="grid" aria-label="Calendar">
+          <article class="card">
+            <h2>Trip Calendar</h2>
+            <p class="hint" data-calendar-placeholder hidden>
+              Calendar embed not configured yet. Add your Google Calendar "Embed code" URL to
+              <code>assets/config.js</code>.
+            </p>
+            <div class="iframe-wrap" aria-label="Embedded calendar">
+              <iframe
+                title="UTCH Trips Calendar"
+                data-calendar-embed
+                src=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </div>
+            <div class="meta">
+              Adding this calendar to your account: open the calendar in Google Calendar and click <em>+</em> (Add),
+              or subscribe with iCal:
+              <a data-calendar-ics hidden>Subscribe (iCal)</a>
+            </div>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-brand">
+          <img src="UTCH_logo.jpg" alt="UTCH logo" />
+          <span>UT Canoe &amp; Hiking Club</span>
+        </div>
+        <div class="footer-info">
+          University of Tennessee &bull; Contact: <a href="mailto:utch1968@gmail.com">utch1968@gmail.com</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

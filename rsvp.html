@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RSVP | UT Canoe & Hiking Club</title>
+    <meta
+      name="description"
+      content="RSVP for an upcoming trip with the UT Canoe & Hiking Club."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/config.js" defer></script>
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="index.html">
+          <img src="UTCH_logo.jpg" alt="UTCH logo" />
+          <div class="title">
+            <strong>UT Canoe &amp; Hiking Club</strong>
+            <span>University of Tennessee</span>
+          </div>
+        </a>
+
+        <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="calendar.html">Calendar</a>
+          <a href="rsvp.html">RSVP</a>
+          <a href="suggest.html">Suggest</a>
+          <a href="about.html">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <section class="hero">
+          <h1>RSVP to a Trip</h1>
+          <p>
+            Pick your trip from the dropdown. If you opened this page from a calendar RSVP link, the trip should
+            already be selected for you.
+          </p>
+        </section>
+
+        <section class="grid" aria-label="RSVP form">
+          <article class="card">
+            <h2>Your RSVP</h2>
+            <form class="form" data-rsvp-form>
+              <div class="field">
+                <label for="tripId">Trip</label>
+                <select id="tripId" name="tripId" required>
+                  <option value="" selected disabled>Loading trips…</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="name">Your name</label>
+                  <input id="name" name="name" autocomplete="name" required />
+                </div>
+                <div class="field">
+                  <label for="contact">Contact</label>
+                  <input id="contact" name="contact" placeholder="Email or phone" required />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="carpool">Carpool</label>
+                <select id="carpool" name="carpool" required>
+                  <option value="" selected disabled>Select an option…</option>
+                  <option value="want_to_drive">Want to drive</option>
+                  <option value="can_drive_if_needed">Can drive if needed</option>
+                  <option value="need_a_ride">Need a ride</option>
+                </select>
+              </div>
+
+              <fieldset class="field" data-gear-field hidden>
+                <legend>Gear you need</legend>
+                <div class="hint">Only shown for trips where officers marked club gear as available.</div>
+                <div class="checkbox-grid" data-gear-options></div>
+              </fieldset>
+
+              <div class="field">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" placeholder="Gear questions, experience level, etc."></textarea>
+              </div>
+
+              <input name="website" tabindex="-1" autocomplete="off" style="display: none" />
+
+              <button class="button primary" type="submit">Submit RSVP</button>
+              <div class="status" data-form-status hidden></div>
+            </form>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-brand">
+          <img src="UTCH_logo.jpg" alt="UTCH logo" />
+          <span>UT Canoe &amp; Hiking Club</span>
+        </div>
+        <div class="footer-info">
+          University of Tennessee &bull; Contact: <a href="mailto:utch1968@gmail.com">utch1968@gmail.com</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

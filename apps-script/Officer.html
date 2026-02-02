@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UTCH Officer • Create Trip</title>
+    <meta name="description" content="UTCH officer tools for creating trips." />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= siteBaseUrl ?>/assets/styles.css" />
+    <script src="<?= siteBaseUrl ?>/assets/config.js" defer></script>
+    <script src="<?= siteBaseUrl ?>/assets/site.js" defer></script>
+    <style>
+      /* Keep the officer page consistent, with small overrides only. */
+      .nav .officer-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: var(--radius-full);
+        background: var(--gray-100);
+        border: 2px solid var(--gray-200);
+        color: var(--gray-800);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+
+      .signin {
+        margin-top: 16px;
+      }
+
+      #gSignInButton > div {
+        margin: 0 !important;
+      }
+
+      .officer-meta {
+        margin-top: 14px;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.9);
+      }
+
+      .officer-meta code {
+        background: rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.95);
+      }
+    </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="<?= siteBaseUrl ?>/index.html">
+          <img src="<?= siteBaseUrl ?>/UTCH_logo.jpg" alt="UTCH logo" />
+          <div class="title">
+            <strong>UT Canoe &amp; Hiking Club</strong>
+            <span>Officer tools</span>
+          </div>
+        </a>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="<?= siteBaseUrl ?>/index.html">Home</a>
+          <a href="<?= siteBaseUrl ?>/calendar.html">Calendar</a>
+          <a href="<?= siteBaseUrl ?>/rsvp.html">RSVP</a>
+          <a href="<?= siteBaseUrl ?>/suggest.html">Suggest</a>
+          <span class="officer-pill" aria-current="page">Officer</span>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <section class="hero">
+          <h1>Create a Trip (Officers)</h1>
+          <p>
+            Sign in, then fill out the form. This will create a Google Calendar event, generate a Trip ID, and
+            configure which club gear is available for RSVPs.
+          </p>
+          <div class="notice officer-meta">
+            Site base URL: <code id="siteBaseUrl"></code>
+          </div>
+        </section>
+
+        <section class="grid" aria-label="Officer tools">
+          <article class="card" id="signinCard">
+            <h2>Sign in</h2>
+            <p class="hint">
+              This page uses Google Sign-In and enforces an officer email allowlist on the server.
+            </p>
+            <div class="signin" id="g_id_onload"></div>
+            <div id="gSignInButton" class="signin"></div>
+            <div id="signinStatus" class="status" hidden></div>
+          </article>
+
+          <article class="card" id="formCard" style="display: none;">
+            <h2>Trip details</h2>
+            <form id="tripForm" class="form">
+              <div class="row">
+                <div class="field">
+                  <label for="title">Title</label>
+                  <input id="title" name="title" placeholder="e.g., Hike: Frozen Head" required />
+                </div>
+                <div class="field">
+                  <label for="activity">Activity (optional)</label>
+                  <select id="activity" name="activity">
+                    <option value="">—</option>
+                    <option value="Hike">Hike</option>
+                    <option value="Canoe/Kayak">Canoe/Kayak</option>
+                    <option value="Camping">Camping</option>
+                    <option value="Climbing">Climbing</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="start">Start (date/time)</label>
+                  <input id="start" name="start" type="datetime-local" required />
+                </div>
+                <div class="field">
+                  <label for="end">End (date/time)</label>
+                  <input id="end" name="end" type="datetime-local" required />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="location">Location (optional)</label>
+                  <input id="location" name="location" placeholder="Public-safe location" />
+                </div>
+                <div class="field">
+                  <label for="difficulty">Difficulty (optional)</label>
+                  <select id="difficulty" name="difficulty">
+                    <option value="">—</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Hard">Hard</option>
+                    <option value="Varies">Varies</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="meetTime">Meet time (optional)</label>
+                  <input id="meetTime" name="meetTime" placeholder="e.g., 8:00 AM" />
+                </div>
+                <div class="field">
+                  <label for="meetPlace">Meet place (optional)</label>
+                  <input id="meetPlace" name="meetPlace" placeholder="e.g., AMB circle" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="leaderName">Leader name (optional)</label>
+                  <input id="leaderName" name="leaderName" />
+                </div>
+                <div class="field">
+                  <label for="leaderContact">Leader contact (optional)</label>
+                  <input id="leaderContact" name="leaderContact" placeholder="Email or phone (if you want public)" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" placeholder="Gear, costs, special instructions, etc."></textarea>
+              </div>
+
+              <fieldset class="field">
+                <legend>Club gear available (optional)</legend>
+                <div class="hint">Select items the club can provide on this trip. RSVP form will show only these options.</div>
+                <div class="checkbox-grid" style="margin-top: 12px;">
+                  <label class="checkbox"><input type="checkbox" name="gearAvailable" value="tent" /><span>Tent</span></label>
+                  <label class="checkbox"><input type="checkbox" name="gearAvailable" value="sleeping bag" /><span>Sleeping Bag</span></label>
+                  <label class="checkbox"><input type="checkbox" name="gearAvailable" value="sleeping pad" /><span>Sleeping Pad</span></label>
+                  <label class="checkbox"><input type="checkbox" name="gearAvailable" value="stove" /><span>Stove</span></label>
+                  <label class="checkbox"><input type="checkbox" name="gearAvailable" value="headlamp" /><span>Headlamp</span></label>
+                </div>
+              </fieldset>
+
+              <button class="button primary" type="submit">Create Calendar Event</button>
+              <div id="formStatus" class="status" hidden></div>
+            </form>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const CLIENT_ID = "<?= clientId ?>";
+      const SITE_BASE_URL = "<?= siteBaseUrl ?>";
+      document.getElementById("siteBaseUrl").textContent = SITE_BASE_URL || "(not set)";
+
+      const signinStatus = document.getElementById("signinStatus");
+      const formStatus = document.getElementById("formStatus");
+      const signinCard = document.getElementById("signinCard");
+      const formCard = document.getElementById("formCard");
+
+      let idToken = "";
+
+      function setStatus(el, kind, text) {
+        if (!el) return;
+        el.classList.remove("ok", "err");
+        if (kind) el.classList.add(kind);
+        el.textContent = text;
+        el.hidden = false;
+      }
+
+      function onCredentialResponse(response) {
+        if (!response || !response.credential) {
+          setStatus(signinStatus, "err", "Sign-in failed.");
+          return;
+        }
+        idToken = response.credential;
+          setStatus(signinStatus, "ok", "Signed in. You can create trips now.");
+          formCard.style.display = "block";
+      }
+
+      window.addEventListener("load", () => {
+        if (!CLIENT_ID) {
+          setStatus(signinStatus, "err", "Missing UTCH_GOOGLE_CLIENT_ID script property.");
+          return;
+        }
+
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: onCredentialResponse,
+          auto_select: false
+        });
+        google.accounts.id.renderButton(document.getElementById("gSignInButton"), {
+          theme: "outline",
+          size: "large",
+          type: "standard",
+          shape: "pill",
+          text: "signin_with"
+        });
+      });
+
+      function toIsoFromLocalDatetime(value) {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "";
+        return date.toISOString();
+      }
+
+      document.getElementById("tripForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        setStatus(formStatus, "", "Creating…");
+
+        if (!idToken) {
+          setStatus(formStatus, "err", "Sign in first.");
+          return;
+        }
+        if (!SITE_BASE_URL) {
+          setStatus(formStatus, "err", "Missing UTCH_SITE_BASE_URL script property.");
+          return;
+        }
+
+        const form = event.target;
+        const gearAvailable = Array.from(form.querySelectorAll('input[name="gearAvailable"]:checked')).map((el) => el.value);
+        const payload = {
+          idToken,
+          title: form.title.value.trim(),
+          activity: form.activity.value,
+          start: toIsoFromLocalDatetime(form.start.value),
+          end: toIsoFromLocalDatetime(form.end.value),
+          location: form.location.value.trim(),
+          difficulty: form.difficulty.value,
+          meetTime: form.meetTime.value.trim(),
+          meetPlace: form.meetPlace.value.trim(),
+          leaderName: form.leaderName.value.trim(),
+          leaderContact: form.leaderContact.value.trim(),
+          notes: form.notes.value.trim(),
+          gearAvailable
+        };
+
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set("action", "createTrip");
+          const res = await fetch(url.toString(), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const text = await res.text();
+          const data = JSON.parse(text);
+          if (!res.ok || !data || data.ok !== true) {
+            throw new Error((data && data.error) ? data.error : "Create trip failed.");
+          }
+          setStatus(
+            formStatus,
+            "ok",
+            `Created. Trip ID: ${data.tripId}. RSVP URL: ${data.rsvpUrl}`
+          );
+          form.reset();
+        } catch (err) {
+          setStatus(formStatus, "err", String(err && err.message ? err.message : err));
+        }
+      });
+    </script>
+  </body>
+</html>

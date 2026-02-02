@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suggest a Trip | UT Canoe & Hiking Club</title>
+    <meta
+      name="description"
+      content="Suggest a new trip for the UT Canoe & Hiking Club."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/config.js" defer></script>
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="index.html">
+          <img src="UTCH_logo.jpg" alt="UTCH logo" />
+          <div class="title">
+            <strong>UT Canoe &amp; Hiking Club</strong>
+            <span>University of Tennessee</span>
+          </div>
+        </a>
+
+        <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="calendar.html">Calendar</a>
+          <a href="rsvp.html">RSVP</a>
+          <a href="suggest.html">Suggest</a>
+          <a href="about.html">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <div class="wrap">
+        <section class="hero">
+          <h1>Suggest a Trip</h1>
+          <p>
+            Share an idea for a hike, paddle, or outing. If you're willing to lead (or co-lead), we'll follow up and
+            help you get it on the calendar.
+          </p>
+        </section>
+
+        <section class="grid" aria-label="Suggest form">
+          <article class="card">
+            <h2>Trip Suggestion</h2>
+
+            <form class="form" data-suggest-form>
+              <div class="row">
+                <div class="field">
+                  <label for="name">Your name</label>
+                  <input id="name" name="name" autocomplete="name" required />
+                </div>
+                <div class="field">
+                  <label for="email">Email (optional)</label>
+                  <input id="email" name="email" type="email" autocomplete="email" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="willingToLead">Would you like to lead this trip?</label>
+                <select id="willingToLead" name="willingToLead" required>
+                  <option value="yes">Yes (I can lead / co-lead)</option>
+                  <option value="maybe">Maybe (ask me)</option>
+                  <option value="no">No (idea only)</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="idea">Trip idea</label>
+                <input id="idea" name="idea" placeholder="e.g., Hike at Frozen Head" required />
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label for="location">Location (optional)</label>
+                  <input id="location" name="location" placeholder="e.g., Wartburg, TN" />
+                </div>
+                <div class="field">
+                  <label for="timing">When (optional)</label>
+                  <input id="timing" name="timing" placeholder="e.g., any Saturday in February" />
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="notes">Notes (optional)</label>
+                <textarea id="notes" name="notes" placeholder="Distance, difficulty, carpool ideas, etc."></textarea>
+              </div>
+
+              <input name="website" tabindex="-1" autocomplete="off" style="display: none" />
+
+              <button class="button primary" type="submit">Send Suggestion</button>
+              <div class="status" data-form-status hidden></div>
+            </form>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-brand">
+          <img src="UTCH_logo.jpg" alt="UTCH logo" />
+          <span>UT Canoe &amp; Hiking Club</span>
+        </div>
+        <div class="footer-info">
+          University of Tennessee &bull; Contact: <a href="mailto:utch1968@gmail.com">utch1968@gmail.com</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
