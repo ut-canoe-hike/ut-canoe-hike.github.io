@@ -4,6 +4,8 @@ window.UTCH_CONFIG = {
   calendarEmbedUrl: "",
   // Optional public ICS URL (Settings and sharing → Integrate calendar → Secret address in iCal format)
   calendarIcsUrl: "",
-  // Apps Script Web App URL (Deploy → Manage deployments → Web app)
-  appsScriptWebAppUrl: ""
+  // Base URL for the backend API (Cloudflare Worker)
+  apiBaseUrl: "",
+  // Display timezone for trip times
+  timeZone: "America/New_York"
 };

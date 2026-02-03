@@ -1,2 +1,20 @@
+# Environment and secrets
 .env
+.dev.vars
+
+# Service account keys (never commit these!)
+*-*-*.json
+*serviceaccount*.json
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Editor
+*.swp
+*.swo
+.vscode/
+.idea/

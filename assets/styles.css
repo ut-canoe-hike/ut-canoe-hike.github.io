@@ -659,6 +659,11 @@ legend {
   padding: 0;
 }
 
+/* Utilities */
+.is-hidden {
+  display: none !important;
+}
+
 /* Visually hidden (accessibility) */
 .sr-only {
   position: absolute;

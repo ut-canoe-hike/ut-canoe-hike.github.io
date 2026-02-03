@@ -1,134 +1,91 @@
-# UT Canoe & Hiking Club Website (UTCH)
+# UT Canoe & Hiking Club Website
 
-This site is designed so future officers can run it with **minimal technical work**.
+A simple website for the University of Tennessee Canoe & Hiking Club.
 
-## What this website does
+## Architecture
 
-- Shows the club website on **GitHub Pages**
-- Shows upcoming trips using an embedded **Google Calendar**
-- Lets members submit:
-  - **RSVPs** (saved to a Google Sheet)
-  - **Trip suggestions** (saved to a Google Sheet)
-- Lets officers create trips through an **Officer Create Trip** page (creates a Google Calendar event + Trip ID)
+- **Frontend**: Static HTML/CSS/JS hosted on GitHub Pages
+- **Backend**: Cloudflare Worker API (in `/worker`)
+- **Data**: Google Sheets (RSVPs, Trips, Suggestions) + Google Calendar
 
-The only “backend” is a Google **Apps Script** web app that writes to a Google **Sheet** and creates calendar events.
+## Features
 
----
+- Public trip calendar (embedded Google Calendar)
+- RSVP form for upcoming trips
+- Trip suggestion form
+- Officer portal for creating/editing/deleting trips
 
-## How the pieces fit together (plain language)
+## Quick Links
 
-- **GitHub Pages repo (this code):** the public website people visit and fill out.
-- **Apps Script:** the “helper” that receives form submissions and writes data.
-- **Google Sheets & Calendar:** where the data actually lives (Sheets = records, Calendar = public schedule).
+- Public site: `https://ut-canoe-hike.github.io/utch_website/`
+- Officer portal: `https://ut-canoe-hike.github.io/utch_website/officer.html`
 
----
+## Setup
 
-## Quick links (once set up)
+### 1. GitHub Pages
 
-- Public site: `https://ut-canoe-hike.github.io/<repo>/`
-- Calendar page: `https://ut-canoe-hike.github.io/<repo>/calendar.html`
-- Officer trip creator: `https://ut-canoe-hike.github.io/<repo>/officer.html`
-- Data spreadsheet (“UTCH Site Data”): `https://docs.google.com/spreadsheets/d/19bHgttW_rnmQXu8x8u4tDlT_RfsOpZgwjlgMh0JHefQ/edit`
+1. Go to repo **Settings** → **Pages**
+2. Source: Deploy from branch `main`, folder `/ (root)`
+3. Save and wait for deployment
 
----
+### 2. Backend API
 
-## One-time setup (do this once per new officer team)
+See [`worker/README.md`](worker/README.md) for full setup instructions.
 
-### 1) GitHub Pages
+Summary:
+1. Create a Google Cloud service account with Sheets + Calendar API access
+2. Share your Google Sheet and Calendar with the service account email
+3. Deploy the Cloudflare Worker with `npm run deploy`
+4. Add secrets (service account credentials, sheet ID, calendar ID, officer passcode)
 
-1. On GitHub, open the repo → **Settings** → **Pages**
-2. **Source:** Deploy from a branch
-3. **Branch:** `main` (or `master`) and **Folder:** `/ (root)`
-4. Save, then wait for the “Your site is live at …” URL
+### 3. Frontend Config
 
-### 2) Google Calendar (Trip calendar)
+Edit `assets/config.js`:
 
-1. In Google Calendar, create (or use) the calendar for UTCH trips
-2. Calendar settings → **Integrate calendar**:
-   - Copy the **Embed code** `src` URL
-   - (Optional) Copy the **iCal address** (helps Apple/Outlook users subscribe)
-3. Put these into `assets/config.js`:
-   - `calendarEmbedUrl`
-   - `calendarIcsUrl` (optional)
+```javascript
+window.UTCH_CONFIG = {
+  calendarEmbedUrl: "https://calendar.google.com/calendar/embed?src=...",
+  calendarIcsUrl: "",  // optional
+  apiBaseUrl: "https://your-worker.workers.dev"
+};
+```
 
-### 3) Apps Script backend (forms + officer tools)
+## Officer Workflow
 
-Recommended: use **clasp** to sync Apps Script with this repo (no copy/paste).
+### Create a Trip
 
-**If using clasp (recommended):**
-1. Make sure `Code.js` + `appsscript.json` are present in the repo root (this is the Apps Script project).
-2. Run: `clasp push`
-3. Deploy: `clasp deploy`
-
-**If not using clasp (manual copy/paste):**
-1. Create a new Apps Script project at `https://script.google.com` (use the **club Google account**)
-2. Copy/paste these repo files into the Apps Script project:
-   - `Code.js`
-   - `appsscript.json` (enable “Show appsscript.json” in Project Settings)
-3. In Apps Script → **Project Settings** → **Script properties**, set:
-   - `UTCH_SPREADSHEET_ID` = `19bHgttW_rnmQXu8x8u4tDlT_RfsOpZgwjlgMh0JHefQ`
-   - `UTCH_CALENDAR_ID` = your calendar ID (ends with `@group.calendar.google.com`)
-   - `UTCH_SITE_BASE_URL` = your GitHub Pages base URL (no trailing slash)
-   - `UTCH_OFFICER_SECRET` = a strong shared passcode for officers (e.g., 20+ chars)
-   - (Optional) `UTCH_NOTIFY_EMAIL` = email to notify when someone suggests a trip
-4. Deploy: **Deploy → New deployment → Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-5. Copy the Web app URL and put it into `assets/config.js`:
-   - `appsScriptWebAppUrl`
-6. Officer trip creation uses the passcode above (no Google Sign-In required).
-
----
-
-## Weekly officer workflow (how to run trips)
-
-### Create a trip (recommended)
-
-1. Open the officer page: `https://ut-canoe-hike.github.io/<repo>/officer.html`
+1. Go to `officer.html`
 2. Enter the officer passcode
-3. Fill out trip details and (optionally) select which **club gear** is available
-4. Submit (you’ll be redirected briefly to a result page and then back)
-
-This will:
-- Create the Google Calendar event (consistent formatting)
-- Create a Trip ID
-- Make the trip show up in the RSVP dropdown on the website
+3. Fill out trip details
+4. Submit — creates a calendar event and adds to the Trips sheet
 
 ### Check RSVPs
 
-1. Open the spreadsheet
-2. Go to the `RSVPs` tab
-3. Filter by `tripId` to see signups for a specific trip
+Open the Google Sheet → `RSVPs` tab
 
-### Review trip suggestions
+### Review Suggestions
 
-1. Open the spreadsheet
-2. Go to the `Suggestions` tab
+Open the Google Sheet → `Suggestions` tab
 
----
+## Common Edits
 
-## Common edits
-
-### Change meeting time / room
-
-- Edit `index.html`, `about.html` (search for “AMB 27”)
-
-### Update contact email
-
-- Search the repo for `utch1968@gmail.com` and update where needed
-
-### Change calendar embed
-
-- Edit `assets/config.js` → `calendarEmbedUrl`
-
----
+| Task | File(s) |
+|------|---------|
+| Change meeting time/room | `index.html`, `about.html` |
+| Update contact email | Search for `utch1968@gmail.com` |
+| Change calendar embed | `assets/config.js` |
+| Change API URL | `assets/config.js` |
+| Modify backend logic | `worker/src/` |
 
 ## Troubleshooting
 
-- **RSVP dropdown says “Unable to load trips”**
-  - `assets/config.js` is missing/incorrect `appsScriptWebAppUrl`
-  - Apps Script isn’t deployed as a web app, or script properties aren’t set
-  - No trips exist yet (create one via the officer page so the `Trips` tab is populated)
+**"Unable to load trips"**
+- Check `assets/config.js` has correct `apiBaseUrl`
+- Verify the Worker is deployed and secrets are set
+- Check browser console for errors
 
-- **Officer trip creation says “Not authorized”**
-  - Wrong `Officer passcode` (it must match the Apps Script `UTCH_OFFICER_SECRET` script property)
+**"Not authorized" on officer page**
+- Wrong passcode (must match `OFFICER_PASSCODE` secret in Worker)
+
+**CORS errors**
+- Check `ALLOWED_ORIGIN` secret matches your GitHub Pages URL exactly (including `https://`, no trailing slash)

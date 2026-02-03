@@ -1,0 +1,377 @@
+import type { Env, Trip, TripInput } from '../types';
+import { getAccessToken } from '../auth';
+import { getRows, appendRow, findRowByColumn, updateCell, deleteRow, getColumnIndex } from '../sheets';
+import { createEvent, deleteEvent, buildEventDescription, formatDateTime, TIMEZONE, type CalendarEvent } from '../calendar';
+import {
+  success,
+  error,
+  requiredString,
+  optionalString,
+  normalizeGearList,
+  generateTripId,
+  parseDateOnly,
+  parseDateAndTime,
+  addDays,
+  addDaysToDateString,
+  getDateTimePartsInTimeZone,
+} from '../utils';
+
+const TRIPS_HEADERS = [
+  'createdAt',
+  'tripId',
+  'eventId',
+  'title',
+  'activity',
+  'start',
+  'end',
+  'location',
+  'leaderName',
+  'leaderContact',
+  'difficulty',
+  'meetTime',
+  'meetPlace',
+  'notes',
+  'gearAvailable',
+  'isAllDay',
+];
+
+// Public: list upcoming trips
+export async function listTrips(env: Env): Promise<Response> {
+  try {
+    const token = await getAccessToken(env);
+    const rows = await getRows(token, env.SHEET_ID, 'Trips');
+
+    const now = Date.now();
+    const windowStart = now - 7 * 24 * 60 * 60 * 1000; // 7 days ago
+
+    const trips: Trip[] = [];
+
+    for (const row of rows) {
+      const tripId = row.tripId?.trim();
+      if (!tripId) continue;
+
+      const start = row.start ? new Date(row.start) : null;
+      if (!start || isNaN(start.getTime())) continue;
+      if (start.getTime() < windowStart) continue;
+
+      trips.push({
+        tripId,
+        title: row.title?.trim() ?? '',
+        start: start.toISOString(),
+        location: row.location?.trim() ?? '',
+        difficulty: row.difficulty?.trim() ?? '',
+        gearAvailable: normalizeGearList(row.gearAvailable),
+        isAllDay: row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true',
+      });
+    }
+
+    trips.sort((a, b) => a.start.localeCompare(b.start));
+
+    return success({ trips });
+  } catch (err) {
+    return error(err instanceof Error ? err.message : 'Failed to list trips', 500);
+  }
+}
+
+// Officer: list all trips (for admin)
+export async function listTripsAdmin(env: Env, body: { officerSecret: string }): Promise<Response> {
+  try {
+    if (body.officerSecret !== env.OFFICER_PASSCODE) {
+      return error('Not authorized', 403);
+    }
+
+    const token = await getAccessToken(env);
+    const rows = await getRows(token, env.SHEET_ID, 'Trips');
+
+    const trips: Trip[] = rows
+      .filter(row => row.tripId?.trim())
+      .map(row => ({
+        tripId: row.tripId.trim(),
+        eventId: row.eventId?.trim(),
+        title: row.title?.trim() ?? '',
+        activity: row.activity?.trim() ?? '',
+        start: row.start ?? '',
+        end: row.end ?? '',
+        location: row.location?.trim() ?? '',
+        leaderName: row.leaderName?.trim() ?? '',
+        leaderContact: row.leaderContact?.trim() ?? '',
+        difficulty: row.difficulty?.trim() ?? '',
+        meetTime: row.meetTime?.trim() ?? '',
+        meetPlace: row.meetPlace?.trim() ?? '',
+        notes: row.notes?.trim() ?? '',
+        gearAvailable: normalizeGearList(row.gearAvailable),
+        isAllDay: row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true',
+      }));
+
+    trips.sort((a, b) => a.start.localeCompare(b.start));
+
+    return success({ trips });
+  } catch (err) {
+    return error(err instanceof Error ? err.message : 'Failed to list trips', 500);
+  }
+}
+
+// Officer: create a trip
+export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string): Promise<Response> {
+  try {
+    if (body.officerSecret !== env.OFFICER_PASSCODE) {
+      return error('Not authorized', 403);
+    }
+
+    const title = requiredString(body.title, 'title');
+    const activity = optionalString(body.activity);
+    const location = optionalString(body.location);
+    const leaderName = optionalString(body.leaderName);
+    const leaderContact = optionalString(body.leaderContact);
+    const difficulty = optionalString(body.difficulty);
+    const meetTime = optionalString(body.meetTime);
+    const meetPlace = optionalString(body.meetPlace);
+    const notes = optionalString(body.notes);
+    const gearAvailable = normalizeGearList(body.gearAvailable);
+
+    const startDate = requiredString(body.startDate, 'startDate');
+    const endDate = optionalString(body.endDate) || startDate;
+    const startTime = optionalString(body.startTime);
+    const endTime = optionalString(body.endTime);
+
+    let start: Date;
+    let end: Date;
+    let isAllDay = false;
+
+    if (!startTime) {
+      isAllDay = true;
+      start = parseDateOnly(startDate, TIMEZONE);
+      end = parseDateOnly(endDate, TIMEZONE);
+      if (end < start) throw new Error('endDate must be on/after startDate');
+      end = addDays(end, 1); // Calendar all-day events use exclusive end
+    } else {
+      start = parseDateAndTime(startDate, startTime, TIMEZONE);
+      if (endTime) {
+        end = parseDateAndTime(endDate, endTime, TIMEZONE);
+      } else {
+        end = new Date(start.getTime() + 2 * 60 * 60 * 1000); // Default 2 hours
+      }
+      if (end <= start) throw new Error('end must be after start');
+    }
+
+    const tripId = generateTripId(start, title);
+    const rsvpUrl = `${siteBaseUrl}/rsvp.html?tripId=${encodeURIComponent(tripId)}`;
+
+    const description = buildEventDescription({
+      tripId,
+      activity,
+      meetTime,
+      meetPlace,
+      leaderName,
+      leaderContact,
+      difficulty,
+      gearAvailable,
+      rsvpUrl,
+      notes,
+    });
+
+    const token = await getAccessToken(env);
+
+    // Create calendar event
+    // For timed events, use the user's input with Eastern timezone
+    // For all-day events, just use the date portion
+    const endParts = endTime
+      ? { date: endDate, time: endTime }
+      : getDateTimePartsInTimeZone(end, TIMEZONE);
+    const calendarEvent: CalendarEvent = {
+      summary: title,
+      description,
+      location: location || undefined,
+      start: isAllDay
+        ? { date: startDate }
+        : { dateTime: formatDateTime(startDate, startTime), timeZone: TIMEZONE },
+      end: isAllDay
+        ? { date: addDaysToDateString(endDate, 1) }
+        : { dateTime: formatDateTime(endParts.date, endParts.time), timeZone: TIMEZONE },
+    };
+
+    const eventId = await createEvent(token, env.CALENDAR_ID, calendarEvent);
+
+    // Add row to sheet
+    await appendRow(token, env.SHEET_ID, 'Trips', TRIPS_HEADERS, {
+      createdAt: new Date(),
+      tripId,
+      eventId,
+      title,
+      activity,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      location: location || '',
+      leaderName,
+      leaderContact,
+      difficulty,
+      meetTime,
+      meetPlace,
+      notes,
+      gearAvailable: gearAvailable.join(','),
+      isAllDay: isAllDay ? '1' : '0',
+    });
+
+    return success({ tripId, eventId, rsvpUrl });
+  } catch (err) {
+    return error(err instanceof Error ? err.message : 'Failed to create trip', 500);
+  }
+}
+
+// Officer: update a trip
+export async function updateTrip(
+  env: Env,
+  tripId: string,
+  body: TripInput,
+  siteBaseUrl: string
+): Promise<Response> {
+  try {
+    if (body.officerSecret !== env.OFFICER_PASSCODE) {
+      return error('Not authorized', 403);
+    }
+
+    const token = await getAccessToken(env);
+    const found = await findRowByColumn(token, env.SHEET_ID, 'Trips', 'tripId', tripId);
+    if (!found) {
+      return error('Trip not found', 404);
+    }
+
+    const title = requiredString(body.title, 'title');
+    const activity = optionalString(body.activity);
+    const location = optionalString(body.location);
+    const leaderName = optionalString(body.leaderName);
+    const leaderContact = optionalString(body.leaderContact);
+    const difficulty = optionalString(body.difficulty);
+    const meetTime = optionalString(body.meetTime);
+    const meetPlace = optionalString(body.meetPlace);
+    const notes = optionalString(body.notes);
+    const gearAvailable = normalizeGearList(body.gearAvailable);
+
+    const startDate = requiredString(body.startDate, 'startDate');
+    const endDate = optionalString(body.endDate) || startDate;
+    const startTime = optionalString(body.startTime);
+    const endTime = optionalString(body.endTime);
+
+    let start: Date;
+    let end: Date;
+    let isAllDay = false;
+
+    if (!startTime) {
+      isAllDay = true;
+      start = parseDateOnly(startDate, TIMEZONE);
+      end = parseDateOnly(endDate, TIMEZONE);
+      if (end < start) throw new Error('endDate must be on/after startDate');
+      end = addDays(end, 1);
+    } else {
+      start = parseDateAndTime(startDate, startTime, TIMEZONE);
+      if (endTime) {
+        end = parseDateAndTime(endDate, endTime, TIMEZONE);
+      } else {
+        end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+      }
+      if (end <= start) throw new Error('end must be after start');
+    }
+
+    const rsvpUrl = `${siteBaseUrl}/rsvp.html?tripId=${encodeURIComponent(tripId)}`;
+
+    const description = buildEventDescription({
+      tripId,
+      activity,
+      meetTime,
+      meetPlace,
+      leaderName,
+      leaderContact,
+      difficulty,
+      gearAvailable,
+      rsvpUrl,
+      notes,
+    });
+
+    // Delete old calendar event if it exists
+    const oldEventId = found.row.eventId;
+    if (oldEventId) {
+      await deleteEvent(token, env.CALENDAR_ID, oldEventId);
+    }
+
+    // Create new calendar event
+    // For timed events, use the user's input with Eastern timezone
+    const endParts = endTime
+      ? { date: endDate, time: endTime }
+      : getDateTimePartsInTimeZone(end, TIMEZONE);
+    const calendarEvent: CalendarEvent = {
+      summary: title,
+      description,
+      location: location || undefined,
+      start: isAllDay
+        ? { date: startDate }
+        : { dateTime: formatDateTime(startDate, startTime), timeZone: TIMEZONE },
+      end: isAllDay
+        ? { date: addDaysToDateString(endDate, 1) }
+        : { dateTime: formatDateTime(endParts.date, endParts.time), timeZone: TIMEZONE },
+    };
+
+    const newEventId = await createEvent(token, env.CALENDAR_ID, calendarEvent);
+
+    // Update sheet row
+    const rowIndex = found.rowIndex;
+    const updates: Record<string, string> = {
+      title,
+      activity,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      location: location || '',
+      leaderName,
+      leaderContact,
+      difficulty,
+      meetTime,
+      meetPlace,
+      notes,
+      gearAvailable: gearAvailable.join(','),
+      isAllDay: isAllDay ? '1' : '0',
+      eventId: newEventId,
+    };
+
+    for (const [col, val] of Object.entries(updates)) {
+      const colIndex = await getColumnIndex(token, env.SHEET_ID, 'Trips', col);
+      if (colIndex > 0) {
+        await updateCell(token, env.SHEET_ID, 'Trips', rowIndex, colIndex, val);
+      }
+    }
+
+    return success({ tripId, eventId: newEventId, rsvpUrl });
+  } catch (err) {
+    return error(err instanceof Error ? err.message : 'Failed to update trip', 500);
+  }
+}
+
+// Officer: delete a trip
+export async function deleteTrip(
+  env: Env,
+  tripId: string,
+  body: { officerSecret: string }
+): Promise<Response> {
+  try {
+    if (body.officerSecret !== env.OFFICER_PASSCODE) {
+      return error('Not authorized', 403);
+    }
+
+    const token = await getAccessToken(env);
+    const found = await findRowByColumn(token, env.SHEET_ID, 'Trips', 'tripId', tripId);
+    if (!found) {
+      return error('Trip not found', 404);
+    }
+
+    // Delete calendar event
+    const eventId = found.row.eventId;
+    if (eventId) {
+      await deleteEvent(token, env.CALENDAR_ID, eventId);
+    }
+
+    // Delete sheet row
+    await deleteRow(token, env.SHEET_ID, 'Trips', found.rowIndex);
+
+    return success({ tripId });
+  } catch (err) {
+    return error(err instanceof Error ? err.message : 'Failed to delete trip', 500);
+  }
+}

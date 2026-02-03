@@ -53,14 +53,14 @@
             </div>
             <div class="field">
               <label for="officerSecret">Passcode</label>
-              <input id="officerSecret" name="officerSecret" type="text" placeholder="Enter Passcode" autocomplete="current-password" required />
+              <input id="officerSecret" name="officerSecret" type="password" placeholder="Enter Passcode" autocomplete="current-password" required />
             </div>
             <button class="button primary" type="submit">Continue</button>
             <div class="status" data-officer-login-status hidden></div>
           </form>
         </section>
 
-        <section class="grid" aria-label="Officer tools" data-officer-dashboard hidden>
+        <section class="grid is-hidden" aria-label="Officer tools" data-officer-dashboard>
           <article class="card">
             <h2>Submit Trip</h2>
             <form class="form" data-officer-create-form>
