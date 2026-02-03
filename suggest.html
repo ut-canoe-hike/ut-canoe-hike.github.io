@@ -46,28 +46,54 @@
 
     <main id="main">
       <section class="hero hero--compact">
-        <div class="hero-sun" data-parallax="0.05" aria-hidden="true"></div>
-        <div class="hero-mountains" data-parallax="0.02" aria-hidden="true"></div>
-        <div class="hero-flowers" data-parallax="0.02" aria-hidden="true"></div>
+        <div class="hero-sky" aria-hidden="true"></div>
+        <div class="hero-sun-wrapper" aria-hidden="true">
+          <svg class="hero-sun" viewBox="0 0 200 200">
+            <g class="sun-rays">
+              <circle cx="100" cy="100" r="95" fill="none" stroke="url(#rayGradient4)" stroke-width="2" stroke-dasharray="8 12" opacity="0.4"/>
+            </g>
+            <circle cx="100" cy="100" r="60" fill="url(#sunGradient4)"/>
+            <defs>
+              <radialGradient id="sunGradient4" cx="40%" cy="40%">
+                <stop offset="0%" stop-color="#ffd699"/>
+                <stop offset="50%" stop-color="#e8a850"/>
+                <stop offset="100%" stop-color="#d4854b"/>
+              </radialGradient>
+              <linearGradient id="rayGradient4" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e8a850"/>
+                <stop offset="100%" stop-color="#d4854b"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="hero-mountains-container" aria-hidden="true">
+          <svg class="mountain-layer mountain-layer--3" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path d="M0,200 C200,170 350,220 550,185 C750,150 900,200 1100,175 C1250,155 1350,190 1440,170 L1440,320 L0,320 Z" fill="#7a99a3"/>
+          </svg>
+          <svg class="mountain-layer mountain-layer--4" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path d="M0,220 C150,200 280,240 450,210 C620,180 800,230 1000,200 C1150,175 1300,210 1440,195 L1440,320 L0,320 Z" fill="#5d7f8a"/>
+          </svg>
+          <svg class="mountain-layer mountain-layer--5" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path d="M0,250 C180,230 320,270 520,240 C720,210 880,260 1100,235 C1250,215 1360,245 1440,230 L1440,320 L0,320 Z" fill="#3d5c66"/>
+          </svg>
+        </div>
         <div class="wrap">
           <div class="hero-layout">
             <div class="hero-content">
-              <span class="eyebrow">Member‑Led Adventures</span>
+              <span class="eyebrow">Member-Led Adventures</span>
               <h1>Suggest a Trip</h1>
-              <p>Have an adventure in mind? Share your idea and we’ll help make it happen.</p>
+              <p>Have an adventure in mind? Share your idea and we'll help make it happen.</p>
             </div>
           </div>
         </div>
       </section>
-
-      <div class="wave-divider wave-divider--1" aria-hidden="true"></div>
 
       <section class="section section--alt">
         <div class="wrap">
           <div class="section-header">
             <span class="section-kicker animate-in">Share an Idea</span>
             <h2 class="animate-in">Help Shape the Adventure Calendar</h2>
-            <p class="animate-in">Got a destination or activity in mind? We love member‑led ideas.</p>
+            <p class="animate-in">Got a destination or activity in mind? We love member-led ideas.</p>
           </div>
 
           <div class="grid two-col">
@@ -88,7 +114,7 @@
                 <div class="field">
                   <label for="willingToLead">Would you like to lead this trip?</label>
                   <select id="willingToLead" name="willingToLead" required>
-                    <option value="yes">Yes, I can lead or co‑lead</option>
+                    <option value="yes">Yes, I can lead or co-lead</option>
                     <option value="maybe">Maybe, ask me about it</option>
                     <option value="no">No, just sharing an idea</option>
                   </select>
@@ -96,7 +122,7 @@
 
                 <div class="floating-label">
                   <textarea id="idea" name="idea" required placeholder=" " rows="3"></textarea>
-                  <label for="idea">Trip Idea (e.g., “Hike at Frozen Head”)</label>
+                  <label for="idea">Trip Idea (e.g., "Hike at Frozen Head")</label>
                 </div>
 
                 <div class="row">
@@ -137,7 +163,7 @@
                 <li>Trips are posted to the calendar.</li>
                 <li>RSVPs open once dates are set.</li>
               </ul>
-              <p class="meta">Want to lead? Select “Yes” and we’ll support you.</p>
+              <p class="meta">Want to lead? Select "Yes" and we'll support you.</p>
             </article>
           </div>
         </div>
@@ -145,7 +171,17 @@
     </main>
 
     <footer class="site-footer">
-      <div class="footer-landscape" aria-hidden="true"></div>
+      <div class="footer-mountains" aria-hidden="true">
+        <svg class="footer-mountain-layer footer-mountain--1" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <path d="M0,80 C200,40 400,100 600,60 C800,20 1000,80 1200,50 C1350,30 1400,60 1440,40 L1440,200 L0,200 Z" fill="#5d7f8a"/>
+        </svg>
+        <svg class="footer-mountain-layer footer-mountain--2" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <path d="M0,100 C180,70 350,120 550,85 C750,50 950,100 1150,75 C1300,55 1380,85 1440,70 L1440,200 L0,200 Z" fill="#4a6670"/>
+        </svg>
+        <svg class="footer-mountain-layer footer-mountain--3" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <path d="M0,120 C150,100 300,140 500,110 C700,80 900,130 1100,100 C1250,80 1360,110 1440,95 L1440,200 L0,200 Z" fill="#3d5560"/>
+        </svg>
+      </div>
       <div class="footer-content">
         <div class="wrap footer-inner">
           <div class="footer-brand">

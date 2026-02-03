@@ -18,3 +18,13 @@ node_modules/
 *.swo
 .vscode/
 .idea/
+
+# Codex tooling
+.codex/
+SCRATCHPAD.md
+
+# Artifacts
+output/playwright/
+*.Zone.Identifier
+assets/inspo/
+home_page_updated.png

@@ -1,0 +1,56 @@
+You are an expert “designer-engineer” working inside `/home/ackson_tempel/utch_website`.
+Your job is to transform the UT Canoe & Hiking Club website until it looks and feels like a polished, professional product that matches the Art Nouveau “Great Outdoors” poster vibe *and* stays clean, readable, and fast.
+
+DO NOT ask me questions. If something is ambiguous, pick the most reasonable option and proceed.
+
+## Tools you should use (skills installed in this repo)
+Skills are installed locally under `.codex/skills` (not system-wide).
+When running Codex for a long redesign session, set `CODEX_HOME=/home/ackson_tempel/utch_website/.codex` so you can use them.
+
+- Use the `screenshot` skill to visually inspect pages after each iteration (home, trips, suggest, about, officer).
+- Use the `playwright` skill only for lightweight regression checks (no data writes): navigation, trips load, forms submit states, no console errors.
+- Use the `cloudflare-deploy` skill only when deployment/backends are involved.
+- Use the `imagegen` skill when you need small illustrative icons that match the poster vibe (prefer a tiny, consistent set; export optimized web formats; avoid heavy assets).
+
+## Suggestion: Deploy subagents when work is parallelizable and the results can be coherently synthesized into one vision.
+
+## Inputs you must use
+1) `home_page_v4.png` and `officer_portal.png` (these are screenshots of the current site).
+   - Study them like a design critique: spacing, typography, hierarchy, contrast, composition, awkward elements, “why does this feel wrong?”
+2) `website_aesthetic_inspo.png` (the poster aesthetic reference).
+3) `REDESIGN_PLAN.md` (our intended direction).
+4) The actual site files (`index.html`, `trips.html`, `about.html`, `suggest.html`, `officer.html`, `assets/styles.css`, `assets/site.js`, etc.).
+
+## Core requirements (must remain true)
+- Public pages must be simple and reliable: Home, Trips (calendar + trip list + RSVP), Suggest, About, Officer.
+- The Officer portal must remain functional and not leak admin UI before login.
+- Trips must load correctly and display errors nicely if the backend is down.
+- The look must be “artistic and crafted” but still modern, uncluttered, and accessible.
+- Keep code parsimonious: prefer small, high-leverage changes over a new framework.
+
+## Design goals (how the site should feel)
+- “Printed poster” warmth + subtle texture; no cheap noise, no distracting artifacts.
+- Calm flow between sections (no abrupt jumps): use spacing, gradients, and dividers that feel intentional.
+- Creative layout: improve the placement and movement of elements 
+- Typography hierarchy should be obvious at a glance: headlines, subheads, body, captions.
+- Buttons feel premium: minimal motion, tasteful shine, consistent hover/active/focus states.
+- Nothing should look “generated” or “random”: eliminate stray icons, weird shapes, and awkward alignments.
+
+## Engineering goals (quality bar)
+- No console errors on any page.
+- No broken links; nav highlights correctly.
+- Forms must have loading + success + error states; never “hang forever”.
+- Responsive: looks good on phone, tablet, desktop.
+- Accessibility basics: contrast is adequate, focus rings visible, semantic headings, labels wired.
+
+## Definition of “done”
+You are done only when:
+- The site matches the poster-inspired vibe without looking busy or chaotic.
+- The screenshots would pass as a real club site built by a good designer.
+- The Officer portal feels clean and intentional.
+- Functionality is intact and visually consistent across all pages.
+
+## Final Requirement
+In order to finish, you must first spawn a subagent whose job is to critique the site in reference to this instruction manual. You may only finish at the point when the subagent agrees that the site lives up to the spirit of these instructions and the referenced documents. You will respond to critiques and iterate until this point.
+
+You should keep a scratchpad document for a temporary memory in order to keep track of all of these requirements and the large context of this work.

@@ -46,9 +46,37 @@
 
     <main id="main">
       <section class="hero hero--compact">
-        <div class="hero-sun" data-parallax="0.05" aria-hidden="true"></div>
-        <div class="hero-mountains" data-parallax="0.02" aria-hidden="true"></div>
-        <div class="hero-flowers" data-parallax="0.02" aria-hidden="true"></div>
+        <div class="hero-sky" aria-hidden="true"></div>
+        <div class="hero-sun-wrapper" aria-hidden="true">
+          <svg class="hero-sun" viewBox="0 0 200 200">
+            <g class="sun-rays">
+              <circle cx="100" cy="100" r="95" fill="none" stroke="url(#rayGradient3)" stroke-width="2" stroke-dasharray="8 12" opacity="0.4"/>
+            </g>
+            <circle cx="100" cy="100" r="60" fill="url(#sunGradient3)"/>
+            <defs>
+              <radialGradient id="sunGradient3" cx="40%" cy="40%">
+                <stop offset="0%" stop-color="#ffd699"/>
+                <stop offset="50%" stop-color="#e8a850"/>
+                <stop offset="100%" stop-color="#d4854b"/>
+              </radialGradient>
+              <linearGradient id="rayGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e8a850"/>
+                <stop offset="100%" stop-color="#d4854b"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="hero-mountains-container" aria-hidden="true">
+          <svg class="mountain-layer mountain-layer--3" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path d="M0,200 C200,170 350,220 550,185 C750,150 900,200 1100,175 C1250,155 1350,190 1440,170 L1440,320 L0,320 Z" fill="#7a99a3"/>
+          </svg>
+          <svg class="mountain-layer mountain-layer--4" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path d="M0,220 C150,200 280,240 450,210 C620,180 800,230 1000,200 C1150,175 1300,210 1440,195 L1440,320 L0,320 Z" fill="#5d7f8a"/>
+          </svg>
+          <svg class="mountain-layer mountain-layer--5" viewBox="0 0 1440 320" preserveAspectRatio="none">
+            <path d="M0,250 C180,230 320,270 520,240 C720,210 880,260 1100,235 C1250,215 1360,245 1440,230 L1440,320 L0,320 Z" fill="#3d5c66"/>
+          </svg>
+        </div>
         <div class="wrap">
           <div class="hero-layout">
             <div class="hero-content">
@@ -60,36 +88,34 @@
         </div>
       </section>
 
-      <div class="wave-divider wave-divider--1" aria-hidden="true"></div>
-
       <section class="section section--alt">
         <div class="wrap">
           <div class="section-header">
             <span class="section-kicker animate-in">Who We Are</span>
             <h2 class="animate-in">A Club Built on Adventure</h2>
-            <p class="animate-in">We keep trips welcoming, affordable, and member‑led.</p>
+            <p class="animate-in">We keep trips welcoming, affordable, and member-led.</p>
           </div>
 
           <div class="bento-grid">
             <article class="card card--ornate bento-large animate-in">
               <h2>Our Mission</h2>
               <p>UTCH exists to get students outside—safely, affordably, and often. We build community through shared adventure and make the outdoors accessible to beginners and veterans alike.</p>
-              <p class="meta">Founded in 1968 • Student‑run • Adventure‑first</p>
+              <p class="meta">Founded in 1968 • Student-run • Adventure-first</p>
             </article>
 
             <article class="card animate-in">
               <h2>What We Do</h2>
-              <p>Hiking, backpacking, canoeing, kayaking, camping, climbing, and more—day trips to multi‑day expeditions.</p>
+              <p>Hiking, backpacking, canoeing, kayaking, camping, climbing, and more—day trips to multi-day expeditions.</p>
             </article>
 
             <article class="card animate-in">
               <h2>Values</h2>
-              <p>We’re inclusive, safety‑minded, and excited to help you grow your skills. Leaders set clear expectations and keep groups prepared.</p>
+              <p>We're inclusive, safety-minded, and excited to help you grow your skills. Leaders set clear expectations and keep groups prepared.</p>
             </article>
 
             <article class="card animate-in">
               <h2>How Trips Work</h2>
-              <p>Check the calendar, RSVP, and watch for follow‑up details. Trip leaders share meet‑ups, pacing, and what to bring.</p>
+              <p>Check the calendar, RSVP, and watch for follow-up details. Trip leaders share meet-ups, pacing, and what to bring.</p>
             </article>
 
             <article class="card bento-wide animate-in">
@@ -106,7 +132,17 @@
     </main>
 
     <footer class="site-footer">
-      <div class="footer-landscape" aria-hidden="true"></div>
+      <div class="footer-mountains" aria-hidden="true">
+        <svg class="footer-mountain-layer footer-mountain--1" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <path d="M0,80 C200,40 400,100 600,60 C800,20 1000,80 1200,50 C1350,30 1400,60 1440,40 L1440,200 L0,200 Z" fill="#5d7f8a"/>
+        </svg>
+        <svg class="footer-mountain-layer footer-mountain--2" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <path d="M0,100 C180,70 350,120 550,85 C750,50 950,100 1150,75 C1300,55 1380,85 1440,70 L1440,200 L0,200 Z" fill="#4a6670"/>
+        </svg>
+        <svg class="footer-mountain-layer footer-mountain--3" viewBox="0 0 1440 200" preserveAspectRatio="none">
+          <path d="M0,120 C150,100 300,140 500,110 C700,80 900,130 1100,100 C1250,80 1360,110 1440,95 L1440,200 L0,200 Z" fill="#3d5560"/>
+        </svg>
+      </div>
       <div class="footer-content">
         <div class="wrap footer-inner">
           <div class="footer-brand">

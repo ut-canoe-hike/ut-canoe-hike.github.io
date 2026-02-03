@@ -586,8 +586,8 @@ function initMagneticElements() {
       const rect = target.getBoundingClientRect();
       const x = event.clientX - rect.left - rect.width / 2;
       const y = event.clientY - rect.top - rect.height / 2;
-      target.style.setProperty('--mx', `${x * 0.08}px`);
-      target.style.setProperty('--my', `${y * 0.08}px`);
+      target.style.setProperty('--mx', `${x * 0.02}px`);
+      target.style.setProperty('--my', `${y * 0.02}px`);
     });
 
     target.addEventListener('mouseleave', () => {
