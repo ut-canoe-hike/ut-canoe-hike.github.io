@@ -91,6 +91,16 @@ ALLOWED_ORIGIN=http://localhost:8000
 SITE_BASE_URL=http://localhost:8000
 ```
 
+## Sync (Sheets → Calendar)
+
+The Worker runs a scheduled sync every hour to keep Calendar events aligned
+with the Trips sheet. If you edit or delete a trip directly in the sheet, the
+sync will update or remove the calendar event automatically (for events within
+the next year and up to 30 days in the past).
+
+You can also trigger a manual sync from the Officer page (Sync Calendar button),
+which calls `POST /api/sync` with the officer passcode.
+
 ## API Endpoints
 
 | Method | Path | Auth | Description |

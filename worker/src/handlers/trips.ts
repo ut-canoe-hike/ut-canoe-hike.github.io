@@ -1,7 +1,16 @@
 import type { Env, Trip, TripInput } from '../types';
 import { getAccessToken } from '../auth';
 import { getRows, appendRow, findRowByColumn, updateCell, deleteRow, getColumnIndex } from '../sheets';
-import { createEvent, deleteEvent, buildEventDescription, formatDateTime, TIMEZONE, type CalendarEvent } from '../calendar';
+import {
+  createEvent,
+  deleteEvent,
+  updateEvent,
+  listEvents,
+  buildEventDescription,
+  formatDateTime,
+  TIMEZONE,
+  type CalendarEvent,
+} from '../calendar';
 import {
   success,
   error,
@@ -34,6 +43,9 @@ const TRIPS_HEADERS = [
   'gearAvailable',
   'isAllDay',
 ];
+
+const SYNC_PAST_DAYS = 30;
+const SYNC_FUTURE_DAYS = 365;
 
 // Public: list upcoming trips
 export async function listTrips(env: Env): Promise<Response> {
@@ -374,4 +386,140 @@ export async function deleteTrip(
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to delete trip', 500);
   }
+}
+
+export async function syncTripsWithCalendar(env: Env, siteBaseUrl: string): Promise<void> {
+  const token = await getAccessToken(env);
+  const rows = await getRows(token, env.SHEET_ID, 'Trips');
+
+  const trips: Array<{ rowIndex: number; row: Record<string, string> }> = rows.map((row, index) => ({
+    rowIndex: index + 2,
+    row,
+  }));
+
+  const tripIds = new Set(trips.map(t => t.row.tripId).filter(Boolean));
+
+  const now = new Date();
+  const timeMin = new Date(now.getTime() - SYNC_PAST_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const timeMax = new Date(now.getTime() + SYNC_FUTURE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+  const calendarEvents = await listEvents(token, env.CALENDAR_ID, timeMin, timeMax);
+  const eventsByTripId = new Map<string, string[]>();
+
+  for (const event of calendarEvents) {
+    const tripId = extractTripId(event.description);
+    if (!tripId) continue;
+    if (!eventsByTripId.has(tripId)) {
+      eventsByTripId.set(tripId, []);
+    }
+    if (event.id) {
+      eventsByTripId.get(tripId)?.push(event.id);
+    }
+  }
+
+  // Delete calendar events that no longer exist in the sheet
+  for (const [tripId, eventIds] of eventsByTripId.entries()) {
+    if (!tripIds.has(tripId)) {
+      for (const eventId of eventIds) {
+        await deleteEvent(token, env.CALENDAR_ID, eventId);
+      }
+      continue;
+    }
+    if (eventIds.length > 1) {
+      for (const dupId of eventIds.slice(1)) {
+        await deleteEvent(token, env.CALENDAR_ID, dupId);
+      }
+    }
+  }
+
+  // Ensure each sheet row has a matching calendar event
+  for (const trip of trips) {
+    const row = trip.row;
+    const tripId = row.tripId?.trim();
+    if (!tripId) continue;
+
+    const startIso = row.start?.trim();
+    if (!startIso) continue;
+
+    const startDate = new Date(startIso);
+    if (Number.isNaN(startDate.getTime())) continue;
+
+    const isAllDay = row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true';
+    const startParts = getDateTimePartsInTimeZone(startDate, TIMEZONE);
+
+    let endParts = startParts;
+    if (row.end) {
+      const endDate = new Date(row.end);
+      if (!Number.isNaN(endDate.getTime())) {
+        endParts = getDateTimePartsInTimeZone(endDate, TIMEZONE);
+      }
+    }
+
+    const inclusiveEndDate = isAllDay
+      ? addDaysToDateString(endParts.date, -1)
+      : endParts.date;
+
+    const rsvpUrl = `${siteBaseUrl}/rsvp.html?tripId=${encodeURIComponent(tripId)}`;
+    const description = buildEventDescription({
+      tripId,
+      activity: row.activity,
+      meetTime: row.meetTime,
+      meetPlace: row.meetPlace,
+      leaderName: row.leaderName,
+      leaderContact: row.leaderContact,
+      difficulty: row.difficulty,
+      gearAvailable: normalizeGearList(row.gearAvailable),
+      rsvpUrl,
+      notes: row.notes,
+    });
+
+    const calendarEvent: CalendarEvent = {
+      summary: row.title || 'UTCH Trip',
+      description,
+      location: row.location || undefined,
+      start: isAllDay
+        ? { date: startParts.date }
+        : { dateTime: formatDateTime(startParts.date, startParts.time), timeZone: TIMEZONE },
+      end: isAllDay
+        ? { date: addDaysToDateString(inclusiveEndDate, 1) }
+        : { dateTime: formatDateTime(endParts.date, endParts.time), timeZone: TIMEZONE },
+    };
+
+    let eventId = row.eventId?.trim() || '';
+    let updated = false;
+
+    if (eventId) {
+      updated = await updateEvent(token, env.CALENDAR_ID, eventId, calendarEvent);
+    }
+
+    if (!eventId || !updated) {
+      eventId = await createEvent(token, env.CALENDAR_ID, calendarEvent);
+      const colIndex = await getColumnIndex(token, env.SHEET_ID, 'Trips', 'eventId');
+      if (colIndex > 0) {
+        await updateCell(token, env.SHEET_ID, 'Trips', trip.rowIndex, colIndex, eventId);
+      }
+    }
+  }
+}
+
+export async function syncTripsRequest(
+  env: Env,
+  body: { officerSecret?: string },
+  siteBaseUrl: string
+): Promise<Response> {
+  try {
+    if (body.officerSecret !== env.OFFICER_PASSCODE) {
+      return error('Not authorized', 403);
+    }
+    await syncTripsWithCalendar(env, siteBaseUrl);
+    return success({});
+  } catch (err) {
+    return error(err instanceof Error ? err.message : 'Failed to sync trips', 500);
+  }
+}
+
+function extractTripId(description?: string): string | null {
+  if (!description) return null;
+  const match = description.match(/Trip ID:\s*([^\n]+)/i);
+  return match ? match[1].trim() : null;
 }

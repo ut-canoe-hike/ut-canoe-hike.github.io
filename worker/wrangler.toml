@@ -2,6 +2,10 @@ name = "utch-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
+# Run periodic sync from Sheets -> Calendar
+[triggers]
+crons = ["0 * * * *"]
+
 # These will be set via `wrangler secret put`
 # GOOGLE_SERVICE_ACCOUNT_EMAIL
 # GOOGLE_PRIVATE_KEY

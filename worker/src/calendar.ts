@@ -47,7 +47,7 @@ export async function updateEvent(
   calendarId: string,
   eventId: string,
   event: CalendarEvent
-): Promise<void> {
+): Promise<boolean> {
   const url = `${CALENDAR_API}/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
 
   const response = await fetch(url, {
@@ -62,10 +62,10 @@ export async function updateEvent(
   if (!response.ok) {
     const text = await response.text();
     // If event doesn't exist, that's okay - we'll create a new one
-    if (response.status !== 404) {
-      throw new Error(`Failed to update calendar event: ${text}`);
-    }
+    if (response.status === 404) return false;
+    throw new Error(`Failed to update calendar event: ${text}`);
   }
+  return true;
 }
 
 export async function deleteEvent(
@@ -85,6 +85,43 @@ export async function deleteEvent(
     const text = await response.text();
     throw new Error(`Failed to delete calendar event: ${text}`);
   }
+}
+
+export async function listEvents(
+  token: string,
+  calendarId: string,
+  timeMin: string,
+  timeMax: string
+): Promise<CalendarEvent[]> {
+  const events: CalendarEvent[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const params = new URLSearchParams({
+      timeMin,
+      timeMax,
+      singleEvents: 'true',
+      orderBy: 'startTime',
+      maxResults: '2500',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const url = `${CALENDAR_API}/${encodeURIComponent(calendarId)}/events?${params.toString()}`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to list calendar events: ${text}`);
+    }
+
+    const data = await response.json() as { items?: CalendarEvent[]; nextPageToken?: string };
+    events.push(...(data.items ?? []));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return events;
 }
 
 export function buildEventDescription(data: {

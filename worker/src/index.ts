@@ -1,6 +1,14 @@
 import type { Env, TripInput, RsvpInput, SuggestionInput } from './types';
 import { error } from './utils';
-import { listTrips, listTripsAdmin, createTrip, updateTrip, deleteTrip } from './handlers/trips';
+import {
+  listTrips,
+  listTripsAdmin,
+  createTrip,
+  updateTrip,
+  deleteTrip,
+  syncTripsWithCalendar,
+  syncTripsRequest,
+} from './handlers/trips';
 import { submitRsvp } from './handlers/rsvp';
 import { submitSuggestion } from './handlers/suggest';
 import { verifyOfficer } from './handlers/officer';
@@ -51,6 +59,9 @@ export default {
       } else if (path === '/api/officer/verify' && method === 'POST') {
         const body = await parseJson<{ officerSecret: string }>(request);
         response = await verifyOfficer(env, body, clientIp);
+      } else if (path === '/api/sync' && method === 'POST') {
+        const body = await parseJson<{ officerSecret?: string }>(request);
+        response = await syncTripsRequest(env, body, siteBaseUrl);
       } else if (path === '/health') {
         response = new Response(JSON.stringify({ ok: true, timestamp: Date.now() }), {
           headers: { 'Content-Type': 'application/json' },
@@ -64,6 +75,10 @@ export default {
       const message = err instanceof Error ? err.message : 'Internal error';
       return corsResponse(env, error(message, 500));
     }
+  },
+  async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
+    const siteBaseUrl = (env.SITE_BASE_URL || env.ALLOWED_ORIGIN).replace(/\/$/, '');
+    event.waitUntil(syncTripsWithCalendar(env, siteBaseUrl));
   },
 };
 

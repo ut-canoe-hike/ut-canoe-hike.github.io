@@ -380,6 +380,8 @@ function initOfficerPortal() {
   const editStatus = dashboard.querySelector('[data-officer-edit-status]');
   const deleteForm = dashboard.querySelector('[data-officer-delete-form]');
   const deleteStatus = dashboard.querySelector('[data-officer-delete-status]');
+  const syncButton = dashboard.querySelector('[data-officer-sync-button]');
+  const syncStatus = dashboard.querySelector('[data-officer-sync-status]');
 
   const editSelect = dashboard.querySelector('[data-edit-trip-select]');
   const deleteSelect = dashboard.querySelector('[data-delete-trip-select]');
@@ -618,6 +620,21 @@ function initOfficerPortal() {
       loadAdminTrips();
     } catch (err) {
       setStatus(deleteStatus, 'err', err.message || 'Delete failed.');
+    }
+  });
+
+  syncButton?.addEventListener('click', async () => {
+    if (!officerSecret) return;
+    syncButton.disabled = true;
+    setStatus(syncStatus, '', 'Syncing...');
+    try {
+      await api('POST', '/api/sync', { officerSecret });
+      setStatus(syncStatus, 'ok', 'Calendar synced.');
+      loadAdminTrips();
+    } catch (err) {
+      setStatus(syncStatus, 'err', err.message || 'Sync failed.');
+    } finally {
+      syncButton.disabled = false;
     }
   });
 }
