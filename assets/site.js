@@ -97,11 +97,6 @@ function setStatus(el, kind, text) {
   el.hidden = false;
 }
 
-function getQueryParam(name) {
-  const url = new URL(window.location.href);
-  return url.searchParams.get(name) || '';
-}
-
 function escapeHTML(str) {
   if (!str) return '';
   return str.replace(/[&<>"']/g, char => ({
@@ -109,27 +104,35 @@ function escapeHTML(str) {
   }[char]));
 }
 
-function getActivityClass(activity) {
-  const map = {
-    'Hike': 'activity-hike',
-    'Backpacking': 'activity-hike',
-    'Canoe/Kayak': 'activity-paddle',
-    'Camping': 'activity-camp',
-    'Climbing': 'activity-climb',
-    'Other': 'activity-social'
-  };
-  return map[activity] || 'activity-hike';
-}
+const ACTIVITY_META = {
+  Hike: {
+    className: 'activity-hike',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20l6-9 5 7 4-6 3 8" /><path d="M3 20h18" /></svg>'
+  },
+  Backpacking: {
+    className: 'activity-hike',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20l6-9 5 7 4-6 3 8" /><path d="M3 20h18" /></svg>'
+  },
+  'Canoe/Kayak': {
+    className: 'activity-paddle',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c2 2 4 2 6 0s4-2 6 0 4 2 6 0" /><path d="M12 3v18" /></svg>'
+  },
+  Camping: {
+    className: 'activity-camp',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20l9-16 9 16" /><path d="M7 14h10" /></svg>'
+  },
+  Climbing: {
+    className: 'activity-climb',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20l6-16 6 16" /><path d="M9 12h6" /></svg>'
+  },
+  Other: {
+    className: 'activity-social',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3" /><path d="M5 20c1.5-3 4-5 7-5s5.5 2 7 5" /></svg>'
+  }
+};
 
-function getActivityIcon(activity) {
-  const icons = {
-    'activity-hike': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20l6-9 5 7 4-6 3 8" /><path d="M3 20h18" /></svg>',
-    'activity-paddle': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c2 2 4 2 6 0s4-2 6 0 4 2 6 0" /><path d="M12 3v18" /></svg>',
-    'activity-climb': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20l6-16 6 16" /><path d="M9 12h6" /></svg>',
-    'activity-camp': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20l9-16 9 16" /><path d="M7 14h10" /></svg>',
-    'activity-social': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3" /><path d="M5 20c1.5-3 4-5 7-5s5.5 2 7 5" /></svg>'
-  };
-  return icons[activity] || icons['activity-hike'];
+function getActivityMeta(activity) {
+  return ACTIVITY_META[activity] || ACTIVITY_META.Hike;
 }
 
 function renderSkeleton(container, count = 3) {
@@ -244,26 +247,6 @@ function initScrollAnimations() {
   elements.forEach(el => observer.observe(el));
 }
 
-function initParallax() {
-  const layers = document.querySelectorAll('[data-parallax]');
-  if (!layers.length) return;
-
-  // Check for reduced motion preference
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const handle = () => {
-    const scrollY = window.scrollY;
-    layers.forEach(layer => {
-      const speed = parseFloat(layer.dataset.parallax) || 0;
-      const yPos = -(scrollY * speed);
-      layer.style.transform = `translate3d(0, ${yPos}px, 0)`;
-    });
-  };
-
-  window.addEventListener('scroll', handle, { passive: true });
-  handle();
-}
-
 // ============================================
 // Trip Card HTML Generator
 // ============================================
@@ -272,22 +255,18 @@ function createTripCardHTML(trip, timeZone, includeRsvpBtn = false) {
   const start = new Date(trip.start);
   const dateStr = formatDateLabel(start, timeZone);
   const timeStr = trip.isAllDay ? 'All Day' : formatTimeLabel(start, timeZone);
-  const activityClass = getActivityClass(trip.activity);
-  const icon = getActivityIcon(activityClass);
+  const activity = getActivityMeta(trip.activity);
   const difficultyClass = trip.difficulty
     ? `difficulty-badge difficulty-badge--${trip.difficulty.toLowerCase()}`
     : '';
 
-  const dateParts = trip.isAllDay ? `<span>${dateStr}</span><span>•</span><span>${timeStr}</span>`
-    : `<span>${dateStr}</span><span>•</span><span>${timeStr}</span>`;
-
   return `
-    <article class="trip-card ${activityClass} animate-in" data-trip-id="${trip.tripId}">
+    <article class="trip-card ${activity.className} animate-in" data-trip-id="${trip.tripId}">
       <div class="trip-card-header">
-        <div class="trip-card-icon">${icon}</div>
+        <div class="trip-card-icon">${activity.icon}</div>
         <div class="trip-card-title">
           <h3>${escapeHTML(trip.title)}</h3>
-          <div class="trip-card-date">${dateParts}</div>
+          <div class="trip-card-date"><span>${dateStr}</span><span>•</span><span>${timeStr}</span></div>
         </div>
       </div>
       <div class="trip-card-body">
@@ -299,7 +278,42 @@ function createTripCardHTML(trip, timeZone, includeRsvpBtn = false) {
         ${includeRsvpBtn ? '<button class="btn btn-primary" data-rsvp-trigger data-magnetic>RSVP</button>' : ''}
       </div>` : ''}
     </article>
-  `;
+`;
+}
+
+function renderTrips(container, trips, timeZone, options = {}) {
+  if (!container) return;
+  const {
+    includeRsvp = false,
+    emptyMessage = 'No upcoming trips.',
+    onRsvp,
+    stagger = false
+  } = options;
+
+  if (!trips.length) {
+    container.innerHTML = `<p class="trips-empty">${emptyMessage}</p>`;
+    return;
+  }
+
+  container.innerHTML = trips.map(trip => createTripCardHTML(trip, timeZone, includeRsvp)).join('');
+
+  if (stagger) {
+    container.querySelectorAll('.trip-card').forEach((card, i) => {
+      card.style.animationDelay = `${i * 0.1}s`;
+    });
+  }
+
+  if (onRsvp) {
+    container.querySelectorAll('[data-rsvp-trigger]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tripId = btn.closest('[data-trip-id]')?.dataset.tripId;
+        if (tripId) onRsvp(tripId);
+      });
+    });
+  }
+
+  initScrollAnimations();
+  initMagneticElements();
 }
 
 // ============================================
@@ -316,22 +330,11 @@ function initTripPreview() {
     renderSkeleton(container, 3);
     try {
       const data = await api('GET', '/api/trips');
-      const trips = data.trips.slice(0, 3); // First 3 trips
-
-      if (!trips.length) {
-        container.innerHTML = '<p class="trips-empty">No upcoming trips scheduled. Check back soon!</p>';
-        return;
-      }
-
-      container.innerHTML = trips.map(trip => createTripCardHTML(trip, timeZone)).join('');
-
-      // Trigger animations
-      container.querySelectorAll('.trip-card').forEach((card, i) => {
-        card.style.animationDelay = `${i * 0.1}s`;
-        card.classList.add('animate-in');
+      const trips = data.trips.slice(0, 3);
+      renderTrips(container, trips, timeZone, {
+        emptyMessage: 'No upcoming trips scheduled. Check back soon!',
+        stagger: true
       });
-      initScrollAnimations();
-      initMagneticElements();
     } catch (err) {
       container.innerHTML = '<p class="trips-error">Unable to load trips.</p>';
     }
@@ -357,36 +360,21 @@ function initTripsPage() {
       const data = await api('GET', '/api/trips');
       tripMap.clear();
 
-      if (!data.trips.length) {
-        container.innerHTML = '<p class="trips-empty">No upcoming trips. Check back soon or suggest one!</p>';
-        return;
-      }
-
-      container.innerHTML = data.trips.map(trip => {
+      data.trips.forEach(trip => {
         tripMap.set(trip.tripId, trip);
-        return createTripCardHTML(trip, timeZone, true); // true = include RSVP button
-      }).join('');
-
-      // Add click handlers for RSVP buttons
-      container.querySelectorAll('[data-rsvp-trigger]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const tripId = btn.closest('[data-trip-id]').dataset.tripId;
-          openRsvpPanel(tripMap.get(tripId));
-        });
       });
 
-      // Trigger animations
-      initScrollAnimations();
-      initMagneticElements();
+      renderTrips(container, data.trips, timeZone, {
+        includeRsvp: true,
+        emptyMessage: 'No upcoming trips. Check back soon or suggest one!',
+        onRsvp: (tripId) => openRsvpPanel(tripMap.get(tripId))
+      });
     } catch (err) {
       container.innerHTML = '<p class="trips-error">Unable to load trips.</p>';
     }
   }
 
   loadTrips();
-
-  // Expose tripMap for RSVP panel
-  window.utchTripMap = tripMap;
 }
 
 // ============================================
@@ -906,7 +894,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeaderScroll();
   initScrollProgress();
   initScrollAnimations();
-  initParallax();
   initPageLoad();
   initMagneticElements();
   initPageTransitions();
