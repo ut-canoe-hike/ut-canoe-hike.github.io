@@ -677,17 +677,11 @@ blockquote {
   top: 8%;
   right: 15%;
   z-index: 1;
-  animation: sunFloat 16s ease-in-out infinite;
 }
 
 .hero-sun {
-  width: clamp(100px, 15vw, 180px);
-  height: clamp(100px, 15vw, 180px);
-  filter: drop-shadow(0 0 24px rgba(232, 168, 80, 0.35));
-}
-
-.sun-rays {
-  transform-origin: center;
+  width: clamp(80px, 12vw, 140px);
+  height: clamp(80px, 12vw, 140px);
 }
 
 /* Layered mountain container */
@@ -2022,12 +2016,10 @@ legend {
 
 @keyframes sunFloat {
   0%, 100% {
-    transform: translateY(0) scale(1);
-    filter: drop-shadow(0 0 24px rgba(232, 168, 80, 0.35));
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px) scale(1.02);
-    filter: drop-shadow(0 0 32px rgba(232, 168, 80, 0.45));
+    transform: translateY(-6px);
   }
 }
 
@@ -2531,25 +2523,18 @@ textarea:focus-visible,
   will-change: transform;
 }
 
-/* Enhanced sun glow animation */
+/* Sun glow pulse animation */
+@keyframes sunGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 15px rgba(245, 166, 35, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 25px rgba(245, 166, 35, 0.7));
+  }
+}
+
 .hero-sun {
-  filter: drop-shadow(0 0 24px rgba(232, 168, 80, 0.35));
-  transition: filter 0.3s ease;
-}
-
-.hero-sun-wrapper:hover .hero-sun {
-  filter: drop-shadow(0 0 40px rgba(232, 168, 80, 0.5));
-}
-
-/* Sun rays continuous rotation (CSS fallback) */
-@keyframes sunRaysRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.sun-rays {
-  animation: sunRaysRotate 120s linear infinite;
-  transform-origin: center center;
+  animation: sunGlow 4s ease-in-out infinite;
 }
 
 /* Organic card rotations (CSS-only, GSAP overrides for dynamic cards) */

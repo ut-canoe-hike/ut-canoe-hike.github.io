@@ -229,7 +229,8 @@ function initScrollProgress() {
 }
 
 function initScrollAnimations() {
-  const elements = document.querySelectorAll('.animate-in');
+  // Exclude elements inside .section-header (handled by initSectionReveals)
+  const elements = document.querySelectorAll('.animate-in:not(.section-header .animate-in)');
   if (!elements.length) return;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -237,10 +238,10 @@ function initScrollAnimations() {
     const { gsap, ScrollTrigger } = window;
     gsap.registerPlugin(ScrollTrigger);
 
-    elements.forEach((el, index) => {
+    elements.forEach((el) => {
       // Check if element is inside a grid/flex container for stagger effect
       const parent = el.parentElement;
-      const siblings = parent ? Array.from(parent.querySelectorAll('.animate-in')) : [];
+      const siblings = parent ? Array.from(parent.querySelectorAll('.animate-in:not(.section-header .animate-in)')) : [];
       const siblingIndex = siblings.indexOf(el);
       const staggerDelay = siblingIndex > 0 ? siblingIndex * 0.08 : 0;
 
@@ -293,25 +294,23 @@ function initHeroMotion() {
   const { gsap, ScrollTrigger } = window;
   gsap.registerPlugin(ScrollTrigger);
 
-  // Enhanced parallax layers with more dramatic movement
+  // Parallax layers - distant mountains move slower than close ones
+  // Using positive yPercent so mountains move DOWN as you scroll (revealing sky)
+  // This prevents exposing the background below
   const layers = [
-    { selector: '.mountain-layer--1', speed: 0.12, scale: 1.02 },
-    { selector: '.mountain-layer--2', speed: 0.2, scale: 1.03 },
-    { selector: '.mountain-layer--3', speed: 0.32, scale: 1.04 },
-    { selector: '.mountain-layer--4', speed: 0.45, scale: 1.05 },
-    { selector: '.mountain-layer--5', speed: 0.6, scale: 1.06 }
+    { selector: '.mountain-layer--1', speed: 0.05 },  // Furthest - barely moves
+    { selector: '.mountain-layer--2', speed: 0.1 },
+    { selector: '.mountain-layer--3', speed: 0.18 },
+    { selector: '.mountain-layer--4', speed: 0.28 },
+    { selector: '.mountain-layer--5', speed: 0.4 }   // Closest - moves most
   ];
 
-  layers.forEach(({ selector, speed, scale }) => {
+  layers.forEach(({ selector, speed }) => {
     const layer = hero.querySelector(selector);
     if (!layer) return;
 
-    // Set initial state
-    gsap.set(layer, { transformOrigin: 'center bottom' });
-
     gsap.to(layer, {
-      yPercent: -40 * speed,
-      scale: scale,
+      yPercent: 25 * speed,  // Move DOWN (positive) to reveal sky, not expose bottom
       ease: 'none',
       scrollTrigger: {
         trigger: hero,
@@ -322,11 +321,11 @@ function initHeroMotion() {
     });
   });
 
-  // Trees parallax - moves faster than mountains (foreground)
+  // Trees parallax - foreground moves most
   const trees = hero.querySelector('.hero-trees');
   if (trees) {
     gsap.to(trees, {
-      yPercent: -35,
+      yPercent: 12,  // Move down with scroll
       ease: 'none',
       scrollTrigger: {
         trigger: hero,
@@ -337,14 +336,12 @@ function initHeroMotion() {
     });
   }
 
-  // Sun rises and glows as you scroll
+  // Sun rises slightly as you scroll down
   const sun = hero.querySelector('.hero-sun-wrapper');
   if (sun) {
     gsap.to(sun, {
-      y: -60,
-      scale: 1.15,
-      rotation: 8,
-      transformOrigin: 'center center',
+      y: -40,
+      scale: 1.08,
       ease: 'none',
       scrollTrigger: {
         trigger: hero,
@@ -353,25 +350,13 @@ function initHeroMotion() {
         scrub: 0.8
       }
     });
-
-    // Animate sun rays rotation
-    const sunRays = sun.querySelector('.sun-rays');
-    if (sunRays) {
-      gsap.to(sunRays, {
-        rotation: 360,
-        transformOrigin: 'center center',
-        duration: 120,
-        ease: 'none',
-        repeat: -1
-      });
-    }
   }
 
   // Hero content parallax (moves up slower, creating depth)
   const heroContent = hero.querySelector('.hero-content');
   if (heroContent) {
     gsap.to(heroContent, {
-      yPercent: -15,
+      yPercent: -10,
       ease: 'none',
       scrollTrigger: {
         trigger: hero,
@@ -567,6 +552,15 @@ function initSectionReveals() {
     const p = header.querySelector('p');
     const icon = header.querySelector('.section-icon');
 
+    // Immediately set initial hidden state to prevent flash
+    const elementsToAnimate = [icon, kicker, h2, p].filter(Boolean);
+    gsap.set(elementsToAnimate, { autoAlpha: 0 });
+
+    if (icon) gsap.set(icon, { scale: 0, rotation: -180 });
+    if (kicker) gsap.set(kicker, { y: 30 });
+    if (h2) gsap.set(h2, { y: 40 });
+    if (p) gsap.set(p, { y: 30 });
+
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: header,
@@ -576,33 +570,29 @@ function initSectionReveals() {
     });
 
     if (icon) {
-      tl.fromTo(icon,
-        { scale: 0, rotation: -180 },
-        { scale: 1, rotation: 0, duration: 0.6, ease: 'back.out(2)' },
+      tl.to(icon,
+        { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.6, ease: 'back.out(2)' },
         0
       );
     }
 
     if (kicker) {
-      tl.fromTo(kicker,
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5 },
+      tl.to(kicker,
+        { y: 0, autoAlpha: 1, duration: 0.5 },
         0.1
       );
     }
 
     if (h2) {
-      tl.fromTo(h2,
-        { y: 40, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out' },
+      tl.to(h2,
+        { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out' },
         0.2
       );
     }
 
     if (p) {
-      tl.fromTo(p,
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6 },
+      tl.to(p,
+        { y: 0, autoAlpha: 1, duration: 0.6 },
         0.35
       );
     }
