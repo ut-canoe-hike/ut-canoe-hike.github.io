@@ -2287,13 +2287,16 @@ textarea:focus-visible,
     overflow-y: auto;
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--transition), visibility var(--transition);
+    transform: translateY(-100%);
+    transition: transform var(--transition-slow), opacity var(--transition), visibility var(--transition);
     z-index: var(--z-modal-backdrop);
+    will-change: transform, opacity;
   }
 
   .nav.open {
     opacity: 1;
     visibility: visible;
+    transform: translateY(0);
   }
 
   .nav a {
@@ -2748,9 +2751,14 @@ textarea:focus-visible,
 /* Reset rotation on hover (if GSAP not loaded) */
 @media (hover: hover) {
   .trip-card:hover {
+    transition-delay: 0s;
     transform: rotate(0deg) translateY(-8px) scale(1.02);
     box-shadow: 0 20px 40px rgba(61, 47, 36, 0.15);
   }
+}
+
+.trip-card:focus-within {
+  transition-delay: 0s;
 }
 
 /* Scroll warmth effect (subtle background shift) */
