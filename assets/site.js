@@ -498,28 +498,16 @@ function initRsvpPanel() {
 }
 
 // ============================================
-// Calendar Toggle
+// Calendar Embed
 // ============================================
 
-function initCalendarToggle() {
-  const toggle = document.querySelector('[data-calendar-toggle]');
-  const section = document.querySelector('[data-calendar-section]');
+function initCalendarEmbed() {
   const iframe = document.querySelector('[data-calendar-embed]');
-  const label = toggle?.querySelector('[data-calendar-label]');
-
-  if (!toggle || !section) return;
-
-  toggle.addEventListener('click', () => {
-    const isHidden = section.classList.toggle('is-hidden');
-    if (label) {
-      label.textContent = isHidden ? 'View Calendar' : 'Hide Calendar';
-    }
-
-    // Load iframe src on first open
-    if (!isHidden && iframe && !iframe.src) {
-      iframe.src = getConfig().calendarEmbedUrl || '';
-    }
-  });
+  if (!iframe) return;
+  const src = getConfig().calendarEmbedUrl || '';
+  if (src) {
+    iframe.src = src;
+  }
 }
 
 // ============================================
@@ -927,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTripPreview();      // Homepage
   initTripsPage();        // Trips page
   initRsvpPanel();        // Trips page
-  initCalendarToggle();   // Trips page
+  initCalendarEmbed();    // Trips page
   initSuggestForm();      // Suggest page
   initOfficerPortal();    // Officer page
 });

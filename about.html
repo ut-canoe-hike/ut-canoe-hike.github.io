@@ -48,22 +48,26 @@
       <section class="hero hero--compact">
         <div class="hero-sky" aria-hidden="true"></div>
         <div class="hero-sun-wrapper" aria-hidden="true">
-          <svg class="hero-sun" viewBox="0 0 200 200">
-            <g class="sun-rays">
-              <circle cx="100" cy="100" r="95" fill="none" stroke="url(#rayGradient3)" stroke-width="2" stroke-dasharray="8 12" opacity="0.4"/>
-            </g>
-            <circle cx="100" cy="100" r="60" fill="url(#sunGradient3)"/>
+          <svg class="hero-sun" viewBox="0 0 160 160">
             <defs>
-              <radialGradient id="sunGradient3" cx="40%" cy="40%">
-                <stop offset="0%" stop-color="#ffd699"/>
-                <stop offset="50%" stop-color="#e8a850"/>
-                <stop offset="100%" stop-color="#d4854b"/>
+              <radialGradient id="sunGradient" cx="40%" cy="35%">
+                <stop offset="0%" stop-color="#ffe3b3"/>
+                <stop offset="55%" stop-color="#f2b25b"/>
+                <stop offset="100%" stop-color="#d98a4f"/>
               </radialGradient>
-              <linearGradient id="rayGradient3" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#e8a850"/>
-                <stop offset="100%" stop-color="#d4854b"/>
-              </linearGradient>
             </defs>
+            <g class="sun-rays" stroke="#d38a50" stroke-width="6" stroke-linecap="round" opacity="0.55">
+              <line x1="80" y1="6" x2="80" y2="24"/>
+              <line x1="80" y1="136" x2="80" y2="154"/>
+              <line x1="6" y1="80" x2="24" y2="80"/>
+              <line x1="136" y1="80" x2="154" y2="80"/>
+              <line x1="28" y1="28" x2="40" y2="40"/>
+              <line x1="120" y1="120" x2="132" y2="132"/>
+              <line x1="28" y1="132" x2="40" y2="120"/>
+              <line x1="120" y1="40" x2="132" y2="28"/>
+            </g>
+            <circle cx="80" cy="80" r="30" fill="url(#sunGradient)" stroke="#d38a50" stroke-width="3"/>
+            <circle cx="70" cy="70" r="10" fill="#fff1cf" opacity="0.55"/>
           </svg>
         </div>
         <div class="hero-mountains-container" aria-hidden="true">

@@ -702,23 +702,17 @@ blockquote {
   top: 8%;
   right: 15%;
   z-index: 1;
-  animation: float 8s ease-in-out infinite;
+  animation: sunFloat 16s ease-in-out infinite;
 }
 
 .hero-sun {
   width: clamp(100px, 15vw, 180px);
   height: clamp(100px, 15vw, 180px);
-  filter: drop-shadow(0 0 40px rgba(232, 168, 80, 0.4));
+  filter: drop-shadow(0 0 24px rgba(232, 168, 80, 0.35));
 }
 
 .sun-rays {
   transform-origin: center;
-  animation: sunRotate 60s linear infinite;
-}
-
-@keyframes sunRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 /* Layered mountain container */
@@ -1520,12 +1514,12 @@ main {
 .trip-card::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 7px;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 6px;
   background: linear-gradient(90deg, var(--teal), var(--mustard), var(--rust));
-  border-radius: inherit;
+  border-radius: calc(var(--radius-lg) - 4px) calc(var(--radius-lg) - 4px) 0 0;
   opacity: 0.92;
   z-index: 0;
 }
@@ -2336,6 +2330,15 @@ legend {
   }
   50% {
     transform: translateY(-10px);
+  }
+}
+
+@keyframes sunFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
   }
 }
 
