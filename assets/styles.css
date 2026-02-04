@@ -2277,7 +2277,9 @@ textarea:focus-visible,
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: auto;
+    height: 100dvh;
+    width: 100vw;
     background: var(--cream);
     flex-direction: column;
     align-items: center;
