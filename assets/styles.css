@@ -97,6 +97,10 @@
   --scroll: 0;
 }
 
+html.page-home {
+  --hero-parallax-range: clamp(180px, 24vw, 320px);
+}
+
 /* ---------- Reset & Base ---------- */
 *,
 *::before,

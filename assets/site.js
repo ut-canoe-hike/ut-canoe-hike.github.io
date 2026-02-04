@@ -138,7 +138,7 @@ function applyParallax(gsap, elements, options) {
     const offset = getParallaxOffset(element);
     gsap.set(element, { y: offset });
     gsap.to(element, {
-      y: () => offset - getShift() * depth,
+      y: () => offset + getShift() * depth,
       ease: 'none',
       overwrite: 'auto',
       scrollTrigger: {
@@ -705,25 +705,6 @@ function initFooterParallax() {
   }
 
   // Trees stay grounded - no parallax animation
-
-  // Footer content fade in
-  const footerContent = footer.querySelector('.footer-content');
-  if (footerContent) {
-    gsap.fromTo(footerContent,
-      { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: footer,
-          start: 'top 90%',
-          toggleActions: 'play none none none'
-        }
-      }
-    );
-  }
 }
 
 // ============================================
