@@ -881,6 +881,9 @@ blockquote {
   border-radius: 50%;
   background: rgba(253, 251, 247, 0.92);
   box-shadow: var(--shadow-sm);
+  /* Hidden initially, GSAP will reveal */
+  opacity: 0;
+  visibility: hidden;
 }
 
 .section-icon svg {
@@ -2581,13 +2584,8 @@ body {
   }
 }
 
-/* Section reveal animations (initial hidden state) */
-.section-header .section-icon,
-.section-header .section-kicker,
-.section-header h2,
-.section-header p {
-  opacity: 1; /* GSAP handles initial state */
-}
+/* Section reveal animations - elements with .animate-in are hidden by that class */
+/* GSAP will animate them to visible when they enter the viewport */
 
 /* Smooth parallax performance */
 .hero-mountains-container,
