@@ -627,18 +627,18 @@ blockquote {
 }
 
 .hero--compact .hero-mountains-container {
-  height: 50%;
-  min-height: 140px;
+  height: 60%;
+  min-height: 180px;
 }
 
 .hero--compact .hero-sun-wrapper {
-  top: 12%;
-  right: 8%;
+  top: 8%;
+  right: 6%;
 }
 
 .hero--compact .hero-sun {
-  width: clamp(60px, 10vw, 100px);
-  height: clamp(60px, 10vw, 100px);
+  width: clamp(80px, 14vw, 130px);
+  height: clamp(80px, 14vw, 130px);
 }
 
 
@@ -674,14 +674,14 @@ blockquote {
 /* Sun wrapper and styling */
 .hero-sun-wrapper {
   position: absolute;
-  top: 8%;
-  right: 15%;
+  top: 6%;
+  right: 12%;
   z-index: 1;
 }
 
 .hero-sun {
-  width: clamp(80px, 12vw, 140px);
-  height: clamp(80px, 12vw, 140px);
+  width: clamp(100px, 15vw, 180px);
+  height: clamp(100px, 15vw, 180px);
 }
 
 /* Layered mountain container */
@@ -690,7 +690,7 @@ blockquote {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 55%;
+  height: 65%;
   z-index: 2;
   pointer-events: none;
 }
@@ -704,27 +704,27 @@ blockquote {
 }
 
 .mountain-layer--1 {
-  height: 90%;
+  height: 95%;
   z-index: 1;
 }
 
 .mountain-layer--2 {
-  height: 80%;
+  height: 88%;
   z-index: 2;
 }
 
 .mountain-layer--3 {
-  height: 70%;
+  height: 78%;
   z-index: 3;
 }
 
 .mountain-layer--4 {
-  height: 60%;
+  height: 68%;
   z-index: 4;
 }
 
 .mountain-layer--5 {
-  height: 50%;
+  height: 58%;
   z-index: 5;
 }
 
@@ -891,7 +891,7 @@ blockquote {
 /* ---------- Main Content ---------- */
 main {
   flex: 1;
-  padding: 0 0 clamp(3rem, 6vw, 5rem);
+  padding: 0;
   background: transparent;
 }
 
@@ -2071,20 +2071,24 @@ legend {
 .animate-in:nth-child(6) { transition-delay: 0.5s; }
 
 /* Initial page load animations */
-.hero {
-  animation: fadeInUp 0.8s var(--ease-out);
-}
+/* Note: Hero and card animations are handled by GSAP when available */
+/* These CSS animations serve as fallback when JS is disabled */
+@media (prefers-reduced-motion: no-preference) {
+  .no-js .hero {
+    animation: fadeInUp 0.8s var(--ease-out);
+  }
 
-.card {
-  animation: fadeInUp 0.6s var(--ease-out) backwards;
-}
+  .no-js .card {
+    animation: fadeInUp 0.6s var(--ease-out) backwards;
+  }
 
-.card:nth-child(1) { animation-delay: 0.1s; }
-.card:nth-child(2) { animation-delay: 0.2s; }
-.card:nth-child(3) { animation-delay: 0.3s; }
-.card:nth-child(4) { animation-delay: 0.4s; }
-.card:nth-child(5) { animation-delay: 0.5s; }
-.card:nth-child(6) { animation-delay: 0.6s; }
+  .no-js .card:nth-child(1) { animation-delay: 0.1s; }
+  .no-js .card:nth-child(2) { animation-delay: 0.2s; }
+  .no-js .card:nth-child(3) { animation-delay: 0.3s; }
+  .no-js .card:nth-child(4) { animation-delay: 0.4s; }
+  .no-js .card:nth-child(5) { animation-delay: 0.5s; }
+  .no-js .card:nth-child(6) { animation-delay: 0.6s; }
+}
 
 /* ---------- Focus States ---------- */
 a:focus-visible,
@@ -2273,13 +2277,13 @@ textarea:focus-visible,
   }
 
   .hero-sun-wrapper {
-    top: 8%;
-    right: 5%;
+    top: 6%;
+    right: 4%;
   }
 
   .hero-sun {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
   }
 
   .hero-layout {

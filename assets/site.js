@@ -596,22 +596,22 @@ function initSectionReveals() {
     const cards = grid.querySelectorAll('.card');
     if (!cards.length) return;
 
-    gsap.fromTo(cards,
-      { y: 60, opacity: 0, scale: 0.95 },
-      {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: grid,
-          start: 'top 85%',
-          toggleActions: 'play none none none'
-        }
+    // Immediately set initial hidden state
+    gsap.set(cards, { autoAlpha: 0, y: 60, scale: 0.95 });
+
+    gsap.to(cards, {
+      y: 0,
+      autoAlpha: 1,
+      scale: 1,
+      duration: 0.8,
+      stagger: 0.12,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: grid,
+        start: 'top 85%',
+        toggleActions: 'play none none none'
       }
-    );
+    });
   });
 }
 
