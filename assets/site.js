@@ -229,8 +229,12 @@ function initScrollProgress() {
 }
 
 function initScrollAnimations() {
-  // Exclude elements inside .section-header (handled by initSectionReveals)
-  const elements = document.querySelectorAll('.animate-in:not(.section-header .animate-in)');
+  // Exclude elements handled by other animation systems:
+  // - .section-header children (handled by initSectionReveals)
+  // - .bento-grid .card (handled by bento grid animation in initSectionReveals)
+  const elements = document.querySelectorAll(
+    '.animate-in:not(.section-header .animate-in):not(.bento-grid .animate-in)'
+  );
   if (!elements.length) return;
 
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -241,7 +245,9 @@ function initScrollAnimations() {
     elements.forEach((el) => {
       // Check if element is inside a grid/flex container for stagger effect
       const parent = el.parentElement;
-      const siblings = parent ? Array.from(parent.querySelectorAll('.animate-in:not(.section-header .animate-in)')) : [];
+      const siblings = parent ? Array.from(parent.querySelectorAll(
+        '.animate-in:not(.section-header .animate-in):not(.bento-grid .animate-in)'
+      )) : [];
       const siblingIndex = siblings.indexOf(el);
       const staggerDelay = siblingIndex > 0 ? siblingIndex * 0.08 : 0;
 
@@ -502,21 +508,7 @@ function animateHeadline(headline, timeline) {
 
   headline.innerHTML = Array.from(tempDiv.childNodes).map(processNode).join('');
 
-  // Add CSS for word animation
-  const style = document.createElement('style');
-  style.textContent = `
-    .word-wrap {
-      display: inline-block;
-      overflow: hidden;
-      vertical-align: bottom;
-    }
-    .word {
-      display: inline-block;
-    }
-  `;
-  document.head.appendChild(style);
-
-  // Animate words
+  // Animate words (CSS for .word-wrap and .word is in styles.css)
   const wordElements = headline.querySelectorAll('.word');
   if (wordElements.length && timeline) {
     timeline.fromTo(wordElements,
