@@ -1094,6 +1094,10 @@ main {
   transform: translate3d(var(--mx), calc(var(--my) + var(--lift)), 0) scale(var(--scale));
 }
 
+.btn:not(:hover):not(:active) {
+  transition-duration: 90ms;
+}
+
 .btn:hover {
   --lift: -0.4px;
   --scale: 1.002;
