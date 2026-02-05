@@ -1020,8 +1020,11 @@ function initSuggestForm() {
         timing: form.timing.value.trim(),
         notes: form.notes.value.trim(),
       });
-      setStatus(statusEl, '', '');
-      if (statusEl) statusEl.hidden = true;
+      if (statusEl) {
+        statusEl.classList.remove('ok', 'err');
+        statusEl.textContent = '';
+        statusEl.hidden = true;
+      }
       form.reset();
       if (successEl) {
         form.hidden = true;
