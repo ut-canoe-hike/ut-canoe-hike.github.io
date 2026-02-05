@@ -993,8 +993,13 @@ function initSuggestForm() {
   const statusEl = document.querySelector('[data-form-status]');
   const successEl = document.querySelector('[data-form-success]');
 
+  if (statusEl) {
+    statusEl.hidden = true;
+  }
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (statusEl) statusEl.hidden = false;
     setStatus(statusEl, '', 'Submitting...');
 
     // Honeypot check
@@ -1015,7 +1020,8 @@ function initSuggestForm() {
         timing: form.timing.value.trim(),
         notes: form.notes.value.trim(),
       });
-      setStatus(statusEl, 'ok', 'Suggestion submitted! Thank you.');
+      setStatus(statusEl, '', '');
+      if (statusEl) statusEl.hidden = true;
       form.reset();
       if (successEl) {
         form.hidden = true;
