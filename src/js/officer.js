@@ -12,6 +12,10 @@ import {
   setStatus
 } from './core.js';
 
+function getErrorMessage(err, fallback) {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 // ============================================
 // Officer Portal
 // ============================================
@@ -131,7 +135,7 @@ function initOfficerPortal() {
       populateSelect(editSelect, trips);
       populateSelect(deleteSelect, trips);
     } catch (err) {
-      const message = err.message || 'Unable to load trips.';
+      const message = getErrorMessage(err, 'Unable to load trips.');
       if (editStatus) setStatus(editStatus, 'err', message);
       if (deleteStatus) setStatus(deleteStatus, 'err', message);
     }
@@ -216,7 +220,7 @@ function initOfficerPortal() {
       showDashboard();
       loadAdminTrips();
     } catch (err) {
-      setStatus(loginStatus, 'err', err.message || 'Not authorized.');
+      setStatus(loginStatus, 'err', getErrorMessage(err, 'Not authorized.'));
     }
   });
 
@@ -231,7 +235,7 @@ function initOfficerPortal() {
       createForm.reset();
       loadAdminTrips();
     } catch (err) {
-      setStatus(createStatus, 'err', err.message || 'Trip submission failed.');
+      setStatus(createStatus, 'err', getErrorMessage(err, 'Trip submission failed.'));
     }
   });
 
@@ -249,7 +253,7 @@ function initOfficerPortal() {
       setStatus(editStatus, 'ok', 'Changes saved.');
       loadAdminTrips();
     } catch (err) {
-      setStatus(editStatus, 'err', err.message || 'Update failed.');
+      setStatus(editStatus, 'err', getErrorMessage(err, 'Update failed.'));
     }
   });
 
@@ -269,7 +273,7 @@ function initOfficerPortal() {
       setStatus(deleteStatus, 'ok', 'Trip deleted.');
       loadAdminTrips();
     } catch (err) {
-      setStatus(deleteStatus, 'err', err.message || 'Delete failed.');
+      setStatus(deleteStatus, 'err', getErrorMessage(err, 'Delete failed.'));
     }
   });
 
@@ -282,7 +286,7 @@ function initOfficerPortal() {
       setStatus(syncStatus, 'ok', 'Calendar synced.');
       loadAdminTrips();
     } catch (err) {
-      setStatus(syncStatus, 'err', err.message || 'Sync failed.');
+      setStatus(syncStatus, 'err', getErrorMessage(err, 'Sync failed.'));
     } finally {
       syncButton.disabled = false;
     }

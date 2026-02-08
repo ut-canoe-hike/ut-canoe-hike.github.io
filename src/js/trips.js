@@ -48,6 +48,10 @@ function getActivityMeta(activity) {
   return ACTIVITY_META[activity] || ACTIVITY_META.Hike;
 }
 
+function getErrorMessage(err, fallback) {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
 // ============================================
 // Skeleton Loading
 // ============================================
@@ -264,7 +268,7 @@ function initRsvpPanel() {
       form.reset();
       setTimeout(closePanel, 2000);
     } catch (err) {
-      setStatus(statusEl, 'err', err.message);
+      setStatus(statusEl, 'err', getErrorMessage(err, 'Unable to submit RSVP.'));
     }
   });
 
@@ -303,7 +307,7 @@ function initRsvpPanel() {
     panel.classList.add('active');
     backdrop?.classList.add('active');
     document.body.style.overflow = 'hidden';
-    form.querySelector('input')?.focus();
+    form.querySelector('#rsvpName')?.focus();
   };
 }
 
@@ -369,7 +373,7 @@ function initSuggestForm() {
         successEl.hidden = false;
       }
     } catch (err) {
-      setStatus(statusEl, 'err', err.message);
+      setStatus(statusEl, 'err', getErrorMessage(err, 'Unable to send suggestion.'));
     }
   });
 }

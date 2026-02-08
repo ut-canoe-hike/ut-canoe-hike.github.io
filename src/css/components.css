@@ -276,7 +276,6 @@
 
 @media (hover: hover) {
   .trip-card:hover {
-    transform: rotate(0deg) translate(-3px, -5px) scale(1.02);
     box-shadow: 8px 10px 0 var(--brown-outline-subtle);
   }
 }

@@ -221,6 +221,9 @@ export function initScrollAnimations() {
     );
 
     elements.forEach((el) => {
+      if (el.dataset.animScrollInit === '1') return;
+      el.dataset.animScrollInit = '1';
+
       const parent = el.parentElement;
       const siblings = parent
         ? Array.from(parent.querySelectorAll('.animate-in')).filter(
@@ -351,6 +354,9 @@ export function initCardHoverEffects() {
 
   const tripCards = document.querySelectorAll('.trip-card');
   tripCards.forEach((card, index) => {
+    if (card.dataset.hoverInit === '1') return;
+    card.dataset.hoverInit = '1';
+
     const rotations = [-1.2, 0.8, -0.5, 1.1, -0.9, 0.4, -0.7, 1.3];
     const rotation = rotations[index % rotations.length];
 
