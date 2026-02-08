@@ -52,6 +52,41 @@
   }
 }
 
+/* Officer profiles on About page */
+.officers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.officer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.officer-card h3 {
+  margin-bottom: 0;
+}
+
+.officer-photo-placeholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 3px dashed var(--brown-outline-subtle);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(107, 76, 42, 0.08) 0 12px,
+    rgba(233, 224, 208, 0.7) 12px 24px
+  );
+  display: grid;
+  place-items: center;
+  color: var(--bark-soft);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ---------- Feature list (used in About) ---------- */
 .feature-list {
   list-style: none;
