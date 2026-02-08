@@ -137,21 +137,22 @@
   z-index: 2;
 }
 
-/* Thick colored header band */
+/* Ornamental header flourish */
 .card::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 6px;
-  background: linear-gradient(
-    90deg,
-    var(--burnt-orange) 0%,
-    var(--mustard) 40%,
-    var(--sage) 70%,
-    var(--teal) 100%
-  );
+  height: 10px;
+  background:
+    radial-gradient(circle at 50% 55%, var(--brown-outline-subtle) 0 2px, transparent 2.5px),
+    repeating-linear-gradient(
+      90deg,
+      rgba(107, 76, 42, 0.28) 0 10px,
+      transparent 10px 20px
+    ),
+    linear-gradient(90deg, transparent 0 6%, rgba(107, 76, 42, 0.22) 6% 94%, transparent 94% 100%);
   z-index: 3;
 }
 
@@ -203,13 +204,14 @@
 
 .card--portal::after {
   height: 10px;
-  background: linear-gradient(
-    90deg,
-    var(--rust) 0%,
-    var(--burnt-orange) 30%,
-    var(--mustard) 60%,
-    var(--teal) 100%
-  );
+  background:
+    radial-gradient(circle at 50% 55%, rgba(42, 31, 20, 0.5) 0 2px, transparent 2.5px),
+    repeating-linear-gradient(
+      90deg,
+      rgba(42, 31, 20, 0.3) 0 9px,
+      transparent 9px 18px
+    ),
+    linear-gradient(90deg, transparent 0 6%, rgba(42, 31, 20, 0.24) 6% 94%, transparent 94% 100%);
 }
 
 /* Card meta divider */
@@ -247,15 +249,22 @@
   z-index: 0;
 }
 
-/* Colored header band */
+/* Ornamental header flourish */
 .trip-card::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 6px;
-  background: linear-gradient(90deg, var(--teal), var(--sage), var(--mustard));
+  height: 9px;
+  background:
+    radial-gradient(circle at 50% 55%, var(--brown-outline-subtle) 0 2px, transparent 2.5px),
+    repeating-linear-gradient(
+      90deg,
+      rgba(107, 76, 42, 0.24) 0 8px,
+      transparent 8px 16px
+    ),
+    linear-gradient(90deg, transparent 0 6%, rgba(107, 76, 42, 0.18) 6% 94%, transparent 94% 100%);
   z-index: 1;
 }
 
