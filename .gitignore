@@ -42,3 +42,7 @@ officer_portal.png
 website_aesthetic_inspo.png
 instructions.txt
 REDESIGN_PLAN.md
+
+# Local source artifacts used to generate site content (keep out of repo root)
+/January * Meeting Minutes*.docx
+/utch_groupme_qr_code.png
