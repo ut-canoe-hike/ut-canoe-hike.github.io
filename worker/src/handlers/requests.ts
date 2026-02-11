@@ -28,6 +28,13 @@ function generateRequestId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function normalizeSignupStatus(value: unknown): 'REQUEST_OPEN' | 'MEETING_ONLY' | 'FULL' {
+  const status = String(value ?? '').trim().toUpperCase();
+  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
+  if (status === 'FULL') return 'FULL';
+  return 'REQUEST_OPEN';
+}
+
 export async function createRequest(env: Env, body: RequestInput): Promise<Response> {
   try {
     const tripId = requiredString(body.tripId, 'tripId');
@@ -38,6 +45,19 @@ export async function createRequest(env: Env, body: RequestInput): Promise<Respo
     const notes = optionalString(body.notes);
 
     const token = await getAccessToken(env);
+    const trip = await findRowByColumn(token, env.SHEET_ID, 'Trips', 'tripId', tripId);
+    if (!trip) {
+      return error('Trip not found', 404);
+    }
+
+    const signupStatus = normalizeSignupStatus(trip.row.signupStatus);
+    if (signupStatus === 'MEETING_ONLY') {
+      return error('This trip is meeting sign-up only.', 400);
+    }
+    if (signupStatus === 'FULL') {
+      return error('This trip is currently full.', 400);
+    }
+
     const requestId = generateRequestId();
 
     await appendRow(token, env.SHEET_ID, REQUESTS_SHEET, REQUEST_HEADERS, {

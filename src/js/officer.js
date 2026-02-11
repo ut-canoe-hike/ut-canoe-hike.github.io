@@ -9,7 +9,8 @@ import {
   getDateTimePartsForInput,
   formatDateLabel,
   formatTimeLabel,
-  setStatus
+  setStatus,
+  escapeHTML
 } from './core.js';
 
 function getErrorMessage(err, fallback) {
@@ -215,31 +216,34 @@ function initOfficerPortal() {
     }
 
     listEl.innerHTML = requests.map((request) => {
+      const safeRequestId = escapeHTML(String(request.requestId || ''));
       const canMutate = !String(request.requestId || '').startsWith('legacy-');
       const gear = Array.isArray(request.gearNeeded) && request.gearNeeded.length
-        ? request.gearNeeded.join(', ')
+        ? request.gearNeeded.map(item => escapeHTML(String(item))).join(', ')
         : 'None listed';
-      const notes = request.notes ? request.notes : 'No notes';
-      const carpool = request.carpool || 'Not specified';
+      const notes = request.notes ? escapeHTML(String(request.notes)) : 'No notes';
+      const carpool = request.carpool ? escapeHTML(String(request.carpool)) : 'Not specified';
       const submittedAt = formatRequestSubmittedAt(request.submittedAt);
+      const name = request.name ? escapeHTML(String(request.name)) : 'Unnamed request';
+      const contact = request.contact ? escapeHTML(String(request.contact)) : 'None provided';
 
       const actions = kind === 'pending'
         ? `
-          <button class="btn btn-primary btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
-          <button class="btn btn-outline btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+          <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
+          <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
         `
         : `
-          <button class="btn btn-secondary btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move Back</button>
-          <button class="btn btn-outline btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+          <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move Back</button>
+          <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
         `;
 
       return `
         <li class="request-item">
           <div class="request-item-head">
-            <strong>${request.name || 'Unnamed request'}</strong>
+            <strong>${name}</strong>
             <span>${submittedAt}</span>
           </div>
-          <p><strong>Contact:</strong> ${request.contact || 'None provided'}</p>
+          <p><strong>Contact:</strong> ${contact}</p>
           <p><strong>Carpool:</strong> ${carpool}</p>
           <p><strong>Gear Needed:</strong> ${gear}</p>
           <p><strong>Notes:</strong> ${notes}</p>
