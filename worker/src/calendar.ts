@@ -133,7 +133,7 @@ export function buildEventDescription(data: {
   leaderContact?: string;
   difficulty?: string;
   gearAvailable?: string[];
-  rsvpUrl: string;
+  requestUrl: string;
   notes?: string;
 }): string {
   const lines: string[] = ['UTCH Trip', '', `Trip ID: ${data.tripId}`];
@@ -150,7 +150,7 @@ export function buildEventDescription(data: {
   if (data.leaderName) lines.push(`Leader: ${data.leaderName}`);
   if (data.leaderContact) lines.push(`Leader contact: ${data.leaderContact}`);
 
-  lines.push('', `RSVP: ${data.rsvpUrl}`);
+  lines.push('', `Request to join: ${data.requestUrl}`);
 
   if (data.notes) {
     lines.push('', 'Notes:', data.notes);

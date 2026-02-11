@@ -8,6 +8,8 @@ export interface Env {
   SITE_BASE_URL?: string;
 }
 
+export type TripSignupStatus = 'REQUEST_OPEN' | 'MEETING_ONLY' | 'FULL';
+
 export interface Trip {
   tripId: string;
   eventId?: string;
@@ -24,6 +26,7 @@ export interface Trip {
   notes?: string;
   gearAvailable?: string[];
   isAllDay?: boolean;
+  signupStatus?: TripSignupStatus;
 }
 
 export interface TripInput {
@@ -41,10 +44,11 @@ export interface TripInput {
   meetPlace?: string;
   notes?: string;
   gearAvailable?: string[];
+  signupStatus?: TripSignupStatus;
   officerSecret: string;
 }
 
-export interface RsvpInput {
+export interface RequestInput {
   tripId: string;
   name: string;
   contact: string;
@@ -52,6 +56,8 @@ export interface RsvpInput {
   gearNeeded?: string[];
   notes?: string;
 }
+
+export type RequestStatus = 'PENDING' | 'APPROVED' | 'DECLINED';
 
 export interface SuggestionInput {
   name: string;

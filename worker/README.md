@@ -54,7 +54,7 @@ npx wrangler secret put ALLOWED_ORIGIN
 # Your GitHub Pages URL (e.g., https://your-username.github.io)
 
 npx wrangler secret put SITE_BASE_URL
-# Full site base URL for RSVP links (e.g., https://your-username.github.io/your-repo)
+# Full site base URL for trip join links (e.g., https://your-username.github.io/your-repo)
 ```
 
 ### 4. Deploy
@@ -110,7 +110,10 @@ which calls `POST /api/sync` with the officer passcode.
 | PATCH | /api/trips/:id | Officer | Update a trip |
 | DELETE | /api/trips/:id | Officer | Delete a trip |
 | POST | /api/trips/admin | Officer | List all trips (admin view) |
-| POST | /api/rsvp | Public | Submit RSVP |
+| POST | /api/requests | Public | Submit trip join request |
+| POST | /api/rsvp | Public | Backward-compatible alias for submit request |
+| POST | /api/requests/by-trip | Officer | List requests for one trip |
+| PATCH | /api/requests/:id/status | Officer | Update request status |
 | POST | /api/suggest | Public | Submit trip suggestion |
 | POST | /api/officer/verify | Public | Verify officer passcode |
 | GET | /health | Public | Health check |

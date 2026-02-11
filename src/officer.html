@@ -15,7 +15,7 @@
     <main id="main">
       {{> hero-compact
         heroTitle="Trip Management"
-        heroDescription="Log in to create, edit, delete, and sync trips."
+        heroDescription="Log in to create trips, manage signup status, and review requests."
       }}
 
       <!-- Login -->
@@ -50,7 +50,7 @@
           <div class="section-header">
             <span class="section-kicker">Operations</span>
             <h2>Trip Tools</h2>
-            <p>Create new trips, edit details, remove duplicates, and sync the calendar.</p>
+            <p>Create new trips, edit details, review requests, remove duplicates, and sync the calendar.</p>
             <div class="cta">
               <button class="btn btn-secondary" type="button" data-officer-sync-button>Sync Calendar</button>
               <div class="status" data-officer-sync-status hidden></div>
@@ -118,6 +118,15 @@
                       <option value="Varies">Varies</option>
                     </select>
                   </div>
+                </div>
+
+                <div class="field">
+                  <label for="createSignupStatus">Signup Button Status</label>
+                  <select id="createSignupStatus" name="signupStatus" required>
+                    <option value="REQUEST_OPEN">Request to Join</option>
+                    <option value="MEETING_ONLY">Attend Meeting to Sign Up</option>
+                    <option value="FULL">Trip Full</option>
+                  </select>
                 </div>
 
                 <div class="row">
@@ -232,6 +241,15 @@
                   </div>
                 </div>
 
+                <div class="field">
+                  <label for="editSignupStatus">Signup Button Status</label>
+                  <select id="editSignupStatus" name="signupStatus" required>
+                    <option value="REQUEST_OPEN">Request to Join</option>
+                    <option value="MEETING_ONLY">Attend Meeting to Sign Up</option>
+                    <option value="FULL">Trip Full</option>
+                  </select>
+                </div>
+
                 <div class="row">
                   <div class="floating-label">
                     <input id="editMeetTime" name="meetTime" placeholder=" " />
@@ -288,6 +306,37 @@
                 <button class="btn btn-outline" type="submit">Delete Trip</button>
                 <div class="status" data-officer-delete-status hidden></div>
               </form>
+            </article>
+
+            <!-- Trip Requests -->
+            <article class="card card--ornate bento-wide">
+              <h2>Trip Requests</h2>
+              <form class="form" data-officer-requests-form>
+                <div class="field">
+                  <label for="requestsTripId">Select Trip</label>
+                  <select id="requestsTripId" data-requests-trip-select required>
+                    <option value="" disabled selected>Select a trip...</option>
+                  </select>
+                </div>
+              </form>
+
+              <div class="status" data-officer-requests-status hidden></div>
+
+              <div class="requests-board" data-officer-requests-board>
+                <section class="requests-column">
+                  <h3>Pending Requests</h3>
+                  <ul class="requests-list" data-requests-pending>
+                    <li class="requests-empty">Select a trip to view requests.</li>
+                  </ul>
+                </section>
+
+                <section class="requests-column">
+                  <h3>Approved Roster</h3>
+                  <ul class="requests-list" data-requests-approved>
+                    <li class="requests-empty">Select a trip to view roster.</li>
+                  </ul>
+                </section>
+              </div>
             </article>
           </div>
         </div>

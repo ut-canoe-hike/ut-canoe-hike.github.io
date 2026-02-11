@@ -1,5 +1,5 @@
 /**
- * trips.js — Trip card rendering, RSVP panel, calendar, suggest form
+ * trips.js — Trip card rendering, request panel, calendar, suggest form
  * Loaded on index.html and trips.html
  */
 
@@ -43,6 +43,38 @@ const ACTIVITY_META = {
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3" /><path d="M5 20c1.5-3 4-5 7-5s5.5 2 7 5" /></svg>'
   }
 };
+
+const SIGNUP_STATUS_META = {
+  REQUEST_OPEN: {
+    label: 'Request to Join',
+    buttonClass: 'btn btn-primary',
+    mode: 'request',
+    disabled: false,
+  },
+  MEETING_ONLY: {
+    label: 'Attend Meeting to Sign Up',
+    buttonClass: 'btn btn-secondary',
+    mode: 'meeting',
+    disabled: false,
+  },
+  FULL: {
+    label: 'Trip Full',
+    buttonClass: 'btn btn-ghost',
+    mode: 'full',
+    disabled: true,
+  },
+};
+
+function normalizeSignupStatus(value) {
+  const status = String(value || '').trim().toUpperCase();
+  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
+  if (status === 'FULL') return 'FULL';
+  return 'REQUEST_OPEN';
+}
+
+function getSignupActionMeta(trip) {
+  return SIGNUP_STATUS_META[normalizeSignupStatus(trip?.signupStatus)] || SIGNUP_STATUS_META.REQUEST_OPEN;
+}
 
 function getActivityMeta(activity) {
   return ACTIVITY_META[activity] || ACTIVITY_META.Hike;
@@ -101,13 +133,18 @@ function renderTripsState(container, {
 // Trip Card HTML Generator
 // ============================================
 
-function createTripCardHTML(trip, timeZone, includeRsvpBtn = false) {
+function createTripCardHTML(trip, timeZone, includeSignupAction = false) {
   const start = new Date(trip.start);
   const dateStr = formatDateLabel(start, timeZone);
   const timeStr = trip.isAllDay ? 'All Day' : formatTimeLabel(start, timeZone);
   const activity = getActivityMeta(trip.activity);
   const difficultyClass = trip.difficulty
     ? `difficulty-badge difficulty-badge--${trip.difficulty.toLowerCase()}`
+    : '';
+  const actionMeta = getSignupActionMeta(trip);
+
+  const actionBtn = includeSignupAction
+    ? `<button class="${actionMeta.buttonClass}" type="button" ${actionMeta.disabled ? 'disabled aria-disabled="true"' : 'data-signup-trigger'}>${actionMeta.label}</button>`
     : '';
 
   return `
@@ -120,12 +157,12 @@ function createTripCardHTML(trip, timeZone, includeRsvpBtn = false) {
         </div>
       </div>
       <div class="trip-card-body">
-        ${trip.location ? `<p>${escapeHTML(trip.location)}</p>` : '<p>Details shared after RSVP.</p>'}
+        ${trip.location ? `<p>${escapeHTML(trip.location)}</p>` : '<p>Details shared after request review.</p>'}
       </div>
-      ${(trip.difficulty || includeRsvpBtn) ? `
+      ${(trip.difficulty || includeSignupAction) ? `
       <div class="trip-card-footer">
         ${trip.difficulty ? `<span class="${difficultyClass}">${escapeHTML(trip.difficulty)}</span>` : '<span></span>'}
-        ${includeRsvpBtn ? '<button class="btn btn-primary" data-rsvp-trigger>RSVP</button>' : ''}
+        ${actionBtn}
       </div>` : ''}
     </article>
 `;
@@ -134,9 +171,9 @@ function createTripCardHTML(trip, timeZone, includeRsvpBtn = false) {
 function renderTrips(container, trips, timeZone, options = {}) {
   if (!container) return;
   const {
-    includeRsvp = false,
+    includeSignupAction = false,
     emptyMessage = 'No upcoming trips.',
-    onRsvp,
+    onTripAction,
     stagger = false
   } = options;
 
@@ -145,7 +182,7 @@ function renderTrips(container, trips, timeZone, options = {}) {
     return;
   }
 
-  container.innerHTML = trips.map(trip => createTripCardHTML(trip, timeZone, includeRsvp)).join('');
+  container.innerHTML = trips.map(trip => createTripCardHTML(trip, timeZone, includeSignupAction)).join('');
 
   if (stagger) {
     container.querySelectorAll('.trip-card').forEach((card, i) => {
@@ -153,11 +190,11 @@ function renderTrips(container, trips, timeZone, options = {}) {
     });
   }
 
-  if (onRsvp) {
-    container.querySelectorAll('[data-rsvp-trigger]').forEach(btn => {
+  if (onTripAction) {
+    container.querySelectorAll('[data-signup-trigger]').forEach(btn => {
       btn.addEventListener('click', () => {
         const tripId = btn.closest('[data-trip-id]')?.dataset.tripId;
-        if (tripId) onRsvp(tripId);
+        if (tripId) onTripAction(tripId);
       });
     });
   }
@@ -209,6 +246,15 @@ function initTripsPage() {
   const tripMap = new Map();
   const requestedTripId = new URLSearchParams(window.location.search).get('tripId');
 
+  function openTripActionPanel(trip) {
+    if (!trip) return;
+    const mode = getSignupActionMeta(trip).mode;
+    if (mode === 'full') return;
+    if (window._openSignupPanel) {
+      window._openSignupPanel(trip);
+    }
+  }
+
   async function loadTrips() {
     renderSkeleton(container, 6);
     try {
@@ -220,13 +266,13 @@ function initTripsPage() {
       });
 
       renderTrips(container, data.trips, timeZone, {
-        includeRsvp: true,
+        includeSignupAction: true,
         emptyMessage: 'No upcoming trips. Check back soon or suggest one!',
-        onRsvp: (tripId) => openRsvpPanel(tripMap.get(tripId))
+        onTripAction: (tripId) => openTripActionPanel(tripMap.get(tripId))
       });
 
       if (requestedTripId && tripMap.has(requestedTripId)) {
-        openRsvpPanel(tripMap.get(requestedTripId));
+        openTripActionPanel(tripMap.get(requestedTripId));
       }
     } catch {
       renderTripsState(container, {
@@ -241,23 +287,18 @@ function initTripsPage() {
 }
 
 // ============================================
-// RSVP Slide-Out Panel
+// Trip Request Slide-Out Panel
 // ============================================
 
-function openRsvpPanel(trip) {
-  if (!trip) return;
-  if (window._openRsvpPanel) {
-    window._openRsvpPanel(trip);
-  }
-}
-
-function initRsvpPanel() {
-  const panel = document.querySelector('[data-rsvp-panel]');
+function initSignupPanel() {
+  const panel = document.querySelector('[data-signup-panel]');
   const backdrop = document.querySelector('[data-panel-backdrop]');
   const closeBtn = document.querySelector('[data-panel-close]');
-  const form = document.querySelector('[data-rsvp-form]');
+  const titleEl = panel?.querySelector('[data-panel-title]');
+  const messageEl = panel?.querySelector('[data-panel-message]');
+  const form = document.querySelector('[data-signup-form]');
 
-  if (!panel || !form) return;
+  if (!panel || !form || !titleEl || !messageEl) return;
 
   function closePanel() {
     panel.classList.remove('active');
@@ -275,13 +316,31 @@ function initRsvpPanel() {
   });
 
   const statusEl = form.querySelector('[data-form-status]');
-  const tripIdInput = form.querySelector('[data-rsvp-trip-id]');
+  const tripIdInput = form.querySelector('[data-signup-trip-id]');
   const gearField = form.querySelector('[data-gear-field]');
   const gearOptions = form.querySelector('[data-gear-options]');
 
+  function setPanelMode(mode) {
+    const submitBtn = form.querySelector('[data-panel-submit]');
+
+    if (mode === 'meeting') {
+      titleEl.textContent = 'Attend Meeting to Sign Up';
+      messageEl.hidden = false;
+      messageEl.innerHTML = '<p>This trip is meeting sign-up only. Please attend a weekly meeting to request a spot.</p>';
+      form.hidden = true;
+      return;
+    }
+
+    titleEl.textContent = 'Request to Join';
+    messageEl.hidden = false;
+    messageEl.innerHTML = '<p>Submit your request below. Officers review requests before confirming rosters.</p>';
+    form.hidden = false;
+    if (submitBtn) submitBtn.textContent = 'Submit Request';
+  }
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    setStatus(statusEl, '', 'Submitting...');
+    setStatus(statusEl, '', 'Submitting request...');
 
     // Honeypot check
     if (form.querySelector('input[name="website"]')?.value) {
@@ -291,7 +350,7 @@ function initRsvpPanel() {
     }
 
     try {
-      await api('POST', '/api/rsvp', {
+      await api('POST', '/api/requests', {
         tripId: tripIdInput.value,
         name: form.name.value.trim(),
         contact: form.contact.value.trim(),
@@ -300,17 +359,20 @@ function initRsvpPanel() {
         notes: form.notes.value.trim()
       });
 
-      setStatus(statusEl, 'ok', 'RSVP submitted! See you on the trip.');
+      setStatus(statusEl, 'ok', 'Request received. Officers will review it; this is not a confirmed spot.');
       form.reset();
-      setTimeout(closePanel, 2000);
+      setTimeout(closePanel, 2400);
     } catch (err) {
-      setStatus(statusEl, 'err', getErrorMessage(err, 'Unable to submit RSVP.'));
+      setStatus(statusEl, 'err', getErrorMessage(err, 'Request failed. Please try again.'));
     }
   });
 
   // Expose open function
-  window._openRsvpPanel = function(trip) {
+  window._openSignupPanel = function(trip) {
     if (!trip) return;
+
+    const action = getSignupActionMeta(trip);
+    if (action.mode === 'full') return;
 
     tripIdInput.value = trip.tripId;
 
@@ -337,13 +399,27 @@ function initRsvpPanel() {
         `).join('');
       } else {
         gearField.hidden = true;
+        gearOptions.innerHTML = '';
       }
     }
+
+    if (statusEl) {
+      statusEl.textContent = '';
+      statusEl.hidden = true;
+      statusEl.classList.remove('ok', 'err');
+    }
+
+    setPanelMode(action.mode);
 
     panel.classList.add('active');
     backdrop?.classList.add('active');
     document.body.style.overflow = 'hidden';
-    form.querySelector('#rsvpName')?.focus();
+
+    if (action.mode === 'request') {
+      form.querySelector('#signupName')?.focus();
+    } else {
+      closeBtn?.focus();
+    }
   };
 }
 
@@ -420,7 +496,7 @@ function initSuggestForm() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initTripPreview();
-  initRsvpPanel();
+  initSignupPanel();
   initTripsPage();
   initCalendarEmbed();
   initSuggestForm();

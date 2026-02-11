@@ -13,6 +13,84 @@
   border-width: 4px;
 }
 
+.page-officer .bento-grid--officer .bento-wide {
+  grid-column: 1 / -1;
+  max-width: none;
+  margin: 0;
+}
+
+.requests-board {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.requests-column {
+  border: 2px solid var(--brown-outline-subtle);
+  background: var(--cream);
+  padding: 1rem;
+}
+
+.requests-column h3 {
+  margin-bottom: 0.65rem;
+  font-size: 1rem;
+}
+
+.requests-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.requests-empty {
+  padding: 0.75rem;
+  border: 1px dashed var(--brown-outline-subtle);
+  color: var(--bark-soft);
+  font-size: 0.9rem;
+}
+
+.request-item {
+  border: 2px solid var(--brown-outline-subtle);
+  background: var(--cream-light);
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.request-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.request-item-head span {
+  color: var(--bark-soft);
+  font-size: 0.78rem;
+}
+
+.request-item p {
+  margin: 0;
+  line-height: 1.45;
+  font-size: 0.9rem;
+}
+
+.request-actions {
+  margin-top: 0.25rem;
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 960px) {
+  .requests-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ---------- Suggest Page ---------- */
 .page-suggest .card--ornate {
   max-width: 720px;

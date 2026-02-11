@@ -46,6 +46,14 @@
   outline-offset: 3px;
 }
 
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: 2px 2px 0 var(--brown-outline-subtle);
+}
+
 /* Primary — burnt orange poster stamp */
 .btn-primary {
   background: var(--burnt-orange);
@@ -931,6 +939,18 @@ html.page-suggest .status.ok {
 
 .slide-panel-trip-info p {
   margin: 0.25rem 0;
+  color: var(--bark-soft);
+}
+
+.slide-panel-message {
+  margin-bottom: 1.25rem;
+  padding: 0.95rem 1rem;
+  border: 2px solid var(--brown-outline-subtle);
+  background: var(--cream);
+}
+
+.slide-panel-message p {
+  margin: 0;
   color: var(--bark-soft);
 }
 

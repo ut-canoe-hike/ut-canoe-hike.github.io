@@ -1,4 +1,4 @@
-import type { Env, TripInput, RsvpInput, SuggestionInput } from './types';
+import type { Env, TripInput, RequestInput, SuggestionInput } from './types';
 import { error } from './utils';
 import {
   listTrips,
@@ -9,7 +9,7 @@ import {
   syncTripsWithCalendar,
   syncTripsRequest,
 } from './handlers/trips';
-import { submitRsvp } from './handlers/rsvp';
+import { createRequest, listRequestsByTrip, updateRequestStatus } from './handlers/requests';
 import { submitSuggestion } from './handlers/suggest';
 import { verifyOfficer } from './handlers/officer';
 
@@ -50,9 +50,16 @@ export default {
       } else if (path === '/api/trips/admin' && method === 'POST') {
         const body = await parseJson<{ officerSecret: string }>(request);
         response = await listTripsAdmin(env, body);
-      } else if (path === '/api/rsvp' && method === 'POST') {
-        const body = await parseJson<RsvpInput>(request);
-        response = await submitRsvp(env, body);
+      } else if ((path === '/api/rsvp' || path === '/api/requests') && method === 'POST') {
+        const body = await parseJson<RequestInput>(request);
+        response = await createRequest(env, body);
+      } else if (path === '/api/requests/by-trip' && method === 'POST') {
+        const body = await parseJson<{ officerSecret?: string; tripId?: string }>(request);
+        response = await listRequestsByTrip(env, body);
+      } else if (path.match(/^\/api\/requests\/[^/]+\/status$/) && method === 'PATCH') {
+        const requestId = path.split('/')[3];
+        const body = await parseJson<{ officerSecret?: string; status?: string }>(request);
+        response = await updateRequestStatus(env, requestId, body);
       } else if (path === '/api/suggest' && method === 'POST') {
         const body = await parseJson<SuggestionInput>(request);
         response = await submitSuggestion(env, body);

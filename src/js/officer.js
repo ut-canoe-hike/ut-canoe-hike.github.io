@@ -1,5 +1,5 @@
 /**
- * officer.js — Officer portal: login, create/edit/delete trips, calendar sync
+ * officer.js — Officer portal: trip tools and request roster management
  * Loaded only on officer.html
  */
 
@@ -14,6 +14,13 @@ import {
 
 function getErrorMessage(err, fallback) {
   return err instanceof Error && err.message ? err.message : fallback;
+}
+
+function normalizeSignupStatus(value) {
+  const status = String(value || '').trim().toUpperCase();
+  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
+  if (status === 'FULL') return 'FULL';
+  return 'REQUEST_OPEN';
 }
 
 // ============================================
@@ -39,9 +46,16 @@ function initOfficerPortal() {
 
   const editSelect = dashboard.querySelector('[data-edit-trip-select]');
   const deleteSelect = dashboard.querySelector('[data-delete-trip-select]');
+  const requestsTripSelect = dashboard.querySelector('[data-requests-trip-select]');
+  const requestsStatus = dashboard.querySelector('[data-officer-requests-status]');
+  const requestsBoard = dashboard.querySelector('[data-officer-requests-board]');
+  const pendingList = dashboard.querySelector('[data-requests-pending]');
+  const approvedList = dashboard.querySelector('[data-requests-approved]');
+
   const timeZone = getDisplayTimeZone();
 
   let officerSecret = '';
+  let activeRequestsTripId = '';
   const tripsById = new Map();
 
   function showDashboard() {
@@ -94,14 +108,16 @@ function initOfficerPortal() {
     });
   }
 
-  function populateSelect(select, trips) {
+  function populateSelect(select, trips, placeholderText = 'Select a trip...') {
     if (!select) return;
+    const previousValue = select.value;
+
     select.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
     placeholder.disabled = true;
     placeholder.selected = true;
-    placeholder.textContent = trips.length ? 'Select a trip...' : 'No trips found';
+    placeholder.textContent = trips.length ? placeholderText : 'No trips found';
     select.appendChild(placeholder);
 
     for (const trip of trips) {
@@ -110,34 +126,11 @@ function initOfficerPortal() {
       opt.textContent = formatTripLabel(trip);
       select.appendChild(opt);
     }
+
     select.disabled = !trips.length;
-  }
 
-  async function loadAdminTrips() {
-    if (!officerSecret) return;
-
-    if (editSelect) {
-      editSelect.disabled = true;
-      editSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
-    }
-    if (deleteSelect) {
-      deleteSelect.disabled = true;
-      deleteSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
-    }
-
-    try {
-      const data = await api('POST', '/api/trips/admin', { officerSecret });
-      tripsById.clear();
-      const trips = Array.isArray(data.trips) ? data.trips : [];
-      for (const trip of trips) {
-        tripsById.set(trip.tripId, trip);
-      }
-      populateSelect(editSelect, trips);
-      populateSelect(deleteSelect, trips);
-    } catch (err) {
-      const message = getErrorMessage(err, 'Unable to load trips.');
-      if (editStatus) setStatus(editStatus, 'err', message);
-      if (deleteStatus) setStatus(deleteStatus, 'err', message);
+    if (previousValue && trips.some((trip) => trip.tripId === previousValue)) {
+      select.value = previousValue;
     }
   }
 
@@ -157,6 +150,7 @@ function initOfficerPortal() {
       leaderName: form.leaderName.value.trim(),
       leaderContact: form.leaderContact.value.trim(),
       notes: form.notes.value.trim(),
+      signupStatus: normalizeSignupStatus(form.signupStatus?.value),
       gearAvailable,
       officerSecret,
     };
@@ -173,6 +167,7 @@ function initOfficerPortal() {
     editForm.leaderName.value = trip.leaderName || '';
     editForm.leaderContact.value = trip.leaderContact || '';
     editForm.notes.value = trip.notes || '';
+    editForm.signupStatus.value = normalizeSignupStatus(trip.signupStatus);
 
     const startDate = trip.start ? new Date(trip.start) : null;
     const endDate = trip.end ? new Date(trip.end) : null;
@@ -197,12 +192,176 @@ function initOfficerPortal() {
     setGearCheckboxes(editForm, trip.gearAvailable || []);
   }
 
+  function formatRequestSubmittedAt(value) {
+    if (!value) return 'Unknown time';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZone,
+    });
+  }
+
+  function renderRequestList(listEl, requests, kind) {
+    if (!listEl) return;
+
+    if (!requests.length) {
+      const emptyMessage = kind === 'pending' ? 'No pending requests.' : 'No approved members yet.';
+      listEl.innerHTML = `<li class="requests-empty">${emptyMessage}</li>`;
+      return;
+    }
+
+    listEl.innerHTML = requests.map((request) => {
+      const canMutate = !String(request.requestId || '').startsWith('legacy-');
+      const gear = Array.isArray(request.gearNeeded) && request.gearNeeded.length
+        ? request.gearNeeded.join(', ')
+        : 'None listed';
+      const notes = request.notes ? request.notes : 'No notes';
+      const carpool = request.carpool || 'Not specified';
+      const submittedAt = formatRequestSubmittedAt(request.submittedAt);
+
+      const actions = kind === 'pending'
+        ? `
+          <button class="btn btn-primary btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
+          <button class="btn btn-outline btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+        `
+        : `
+          <button class="btn btn-secondary btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move Back</button>
+          <button class="btn btn-outline btn-sm" type="button" data-request-id="${request.requestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+        `;
+
+      return `
+        <li class="request-item">
+          <div class="request-item-head">
+            <strong>${request.name || 'Unnamed request'}</strong>
+            <span>${submittedAt}</span>
+          </div>
+          <p><strong>Contact:</strong> ${request.contact || 'None provided'}</p>
+          <p><strong>Carpool:</strong> ${carpool}</p>
+          <p><strong>Gear Needed:</strong> ${gear}</p>
+          <p><strong>Notes:</strong> ${notes}</p>
+          <div class="request-actions">
+            ${actions}
+          </div>
+        </li>
+      `;
+    }).join('');
+  }
+
+  async function loadTripRequests(tripId) {
+    if (!officerSecret || !requestsTripSelect) return;
+
+    activeRequestsTripId = tripId || '';
+
+    if (!tripId) {
+      if (pendingList) pendingList.innerHTML = '<li class="requests-empty">Select a trip to view requests.</li>';
+      if (approvedList) approvedList.innerHTML = '<li class="requests-empty">Select a trip to view roster.</li>';
+      if (requestsStatus) {
+        requestsStatus.hidden = true;
+      }
+      return;
+    }
+
+    setStatus(requestsStatus, '', 'Loading requests...');
+
+    try {
+      const data = await api('POST', '/api/requests/by-trip', { officerSecret, tripId });
+      const requests = Array.isArray(data.requests) ? data.requests : [];
+      const pending = requests.filter((req) => req.status === 'PENDING');
+      const approved = requests.filter((req) => req.status === 'APPROVED');
+
+      renderRequestList(pendingList, pending, 'pending');
+      renderRequestList(approvedList, approved, 'approved');
+      setStatus(requestsStatus, 'ok', `Loaded ${pending.length} pending and ${approved.length} approved.`);
+    } catch (err) {
+      setStatus(requestsStatus, 'err', getErrorMessage(err, 'Unable to load trip requests.'));
+      if (pendingList) pendingList.innerHTML = '<li class="requests-empty">Unable to load pending requests.</li>';
+      if (approvedList) approvedList.innerHTML = '<li class="requests-empty">Unable to load roster.</li>';
+    }
+  }
+
+  async function loadAdminTrips() {
+    if (!officerSecret) return;
+
+    if (editSelect) {
+      editSelect.disabled = true;
+      editSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
+    }
+    if (deleteSelect) {
+      deleteSelect.disabled = true;
+      deleteSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
+    }
+    if (requestsTripSelect) {
+      requestsTripSelect.disabled = true;
+      requestsTripSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
+    }
+
+    try {
+      const data = await api('POST', '/api/trips/admin', { officerSecret });
+      tripsById.clear();
+      const trips = Array.isArray(data.trips) ? data.trips : [];
+      for (const trip of trips) {
+        trip.signupStatus = normalizeSignupStatus(trip.signupStatus);
+        tripsById.set(trip.tripId, trip);
+      }
+
+      populateSelect(editSelect, trips);
+      populateSelect(deleteSelect, trips);
+      populateSelect(requestsTripSelect, trips);
+
+      if (activeRequestsTripId && tripsById.has(activeRequestsTripId) && requestsTripSelect) {
+        requestsTripSelect.value = activeRequestsTripId;
+        await loadTripRequests(activeRequestsTripId);
+      } else if (requestsTripSelect && requestsTripSelect.value) {
+        await loadTripRequests(requestsTripSelect.value);
+      } else {
+        await loadTripRequests('');
+      }
+    } catch (err) {
+      const message = getErrorMessage(err, 'Unable to load trips.');
+      if (editStatus) setStatus(editStatus, 'err', message);
+      if (deleteStatus) setStatus(deleteStatus, 'err', message);
+      if (requestsStatus) setStatus(requestsStatus, 'err', message);
+    }
+  }
+
   if (editSelect) {
     editSelect.addEventListener('change', () => {
       const trip = tripsById.get(editSelect.value);
       fillEditForm(trip);
     });
   }
+
+  requestsTripSelect?.addEventListener('change', () => {
+    loadTripRequests(requestsTripSelect.value);
+  });
+
+  requestsBoard?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-request-id][data-next-status]');
+    if (!button || !officerSecret || !activeRequestsTripId) return;
+
+    const requestId = button.dataset.requestId;
+    const nextStatus = button.dataset.nextStatus;
+    if (!requestId || !nextStatus) return;
+
+    button.disabled = true;
+    setStatus(requestsStatus, '', 'Updating request...');
+
+    try {
+      await api('PATCH', `/api/requests/${encodeURIComponent(requestId)}/status`, {
+        officerSecret,
+        status: nextStatus,
+      });
+      await loadTripRequests(activeRequestsTripId);
+      setStatus(requestsStatus, 'ok', 'Request updated.');
+    } catch (err) {
+      setStatus(requestsStatus, 'err', getErrorMessage(err, 'Unable to update request.'));
+      button.disabled = false;
+    }
+  });
 
   loginForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -218,7 +377,7 @@ function initOfficerPortal() {
       officerSecret = secret;
       setStatus(loginStatus, 'ok', 'Access granted.');
       showDashboard();
-      loadAdminTrips();
+      await loadAdminTrips();
     } catch (err) {
       setStatus(loginStatus, 'err', getErrorMessage(err, 'Not authorized.'));
     }
@@ -231,9 +390,12 @@ function initOfficerPortal() {
 
     try {
       const data = await api('POST', '/api/trips', collectTripPayload(createForm));
-      setStatus(createStatus, 'ok', `Trip created! RSVP link: ${data.rsvpUrl}`);
+      setStatus(createStatus, 'ok', `Trip created! Join link: ${data.requestUrl}`);
       createForm.reset();
-      loadAdminTrips();
+      if (createForm.signupStatus) {
+        createForm.signupStatus.value = 'REQUEST_OPEN';
+      }
+      await loadAdminTrips();
     } catch (err) {
       setStatus(createStatus, 'err', getErrorMessage(err, 'Trip submission failed.'));
     }
@@ -251,7 +413,7 @@ function initOfficerPortal() {
     try {
       await api('PATCH', `/api/trips/${encodeURIComponent(editSelect.value)}`, collectTripPayload(editForm));
       setStatus(editStatus, 'ok', 'Changes saved.');
-      loadAdminTrips();
+      await loadAdminTrips();
     } catch (err) {
       setStatus(editStatus, 'err', getErrorMessage(err, 'Update failed.'));
     }
@@ -271,7 +433,7 @@ function initOfficerPortal() {
     try {
       await api('DELETE', `/api/trips/${encodeURIComponent(deleteSelect.value)}`, { officerSecret });
       setStatus(deleteStatus, 'ok', 'Trip deleted.');
-      loadAdminTrips();
+      await loadAdminTrips();
     } catch (err) {
       setStatus(deleteStatus, 'err', getErrorMessage(err, 'Delete failed.'));
     }
@@ -284,7 +446,7 @@ function initOfficerPortal() {
     try {
       await api('POST', '/api/sync', { officerSecret });
       setStatus(syncStatus, 'ok', 'Calendar synced.');
-      loadAdminTrips();
+      await loadAdminTrips();
     } catch (err) {
       setStatus(syncStatus, 'err', getErrorMessage(err, 'Sync failed.'));
     } finally {

@@ -1,4 +1,4 @@
-import type { Env, Trip, TripInput } from '../types';
+import type { Env, Trip, TripInput, TripSignupStatus } from '../types';
 import { getAccessToken } from '../auth';
 import { getRows, appendRow, findRowByColumn, updateCell, deleteRow, getColumnIndex } from '../sheets';
 import {
@@ -42,13 +42,21 @@ const TRIPS_HEADERS = [
   'notes',
   'gearAvailable',
   'isAllDay',
+  'signupStatus',
 ];
 
 const SYNC_PAST_DAYS = 30;
 const SYNC_FUTURE_DAYS = 365;
 
-function getRsvpUrl(siteBaseUrl: string, tripId: string): string {
+function getTripJoinUrl(siteBaseUrl: string, tripId: string): string {
   return `${siteBaseUrl}/trips.html?tripId=${encodeURIComponent(tripId)}`;
+}
+
+function normalizeSignupStatus(value: unknown): TripSignupStatus {
+  const status = String(value ?? '').trim().toUpperCase();
+  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
+  if (status === 'FULL') return 'FULL';
+  return 'REQUEST_OPEN';
 }
 
 // Public: list upcoming trips
@@ -78,6 +86,7 @@ export async function listTrips(env: Env): Promise<Response> {
         difficulty: row.difficulty?.trim() ?? '',
         gearAvailable: normalizeGearList(row.gearAvailable),
         isAllDay: row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true',
+        signupStatus: normalizeSignupStatus(row.signupStatus),
       });
     }
 
@@ -117,6 +126,7 @@ export async function listTripsAdmin(env: Env, body: { officerSecret: string }):
         notes: row.notes?.trim() ?? '',
         gearAvailable: normalizeGearList(row.gearAvailable),
         isAllDay: row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true',
+        signupStatus: normalizeSignupStatus(row.signupStatus),
       }));
 
     trips.sort((a, b) => a.start.localeCompare(b.start));
@@ -144,6 +154,7 @@ export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string)
     const meetPlace = optionalString(body.meetPlace);
     const notes = optionalString(body.notes);
     const gearAvailable = normalizeGearList(body.gearAvailable);
+    const signupStatus = normalizeSignupStatus(body.signupStatus);
 
     const startDate = requiredString(body.startDate, 'startDate');
     const endDate = optionalString(body.endDate) || startDate;
@@ -171,7 +182,7 @@ export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string)
     }
 
     const tripId = generateTripId(start, title);
-    const rsvpUrl = getRsvpUrl(siteBaseUrl, tripId);
+    const requestUrl = getTripJoinUrl(siteBaseUrl, tripId);
 
     const description = buildEventDescription({
       tripId,
@@ -182,7 +193,7 @@ export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string)
       leaderContact,
       difficulty,
       gearAvailable,
-      rsvpUrl,
+      requestUrl,
       notes,
     });
 
@@ -226,9 +237,10 @@ export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string)
       notes,
       gearAvailable: gearAvailable.join(','),
       isAllDay: isAllDay ? '1' : '0',
+      signupStatus,
     });
 
-    return success({ tripId, eventId, rsvpUrl });
+    return success({ tripId, eventId, requestUrl, rsvpUrl: requestUrl });
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to create trip', 500);
   }
@@ -262,6 +274,7 @@ export async function updateTrip(
     const meetPlace = optionalString(body.meetPlace);
     const notes = optionalString(body.notes);
     const gearAvailable = normalizeGearList(body.gearAvailable);
+    const signupStatus = normalizeSignupStatus(body.signupStatus);
 
     const startDate = requiredString(body.startDate, 'startDate');
     const endDate = optionalString(body.endDate) || startDate;
@@ -288,7 +301,7 @@ export async function updateTrip(
       if (end <= start) throw new Error('end must be after start');
     }
 
-    const rsvpUrl = getRsvpUrl(siteBaseUrl, tripId);
+    const requestUrl = getTripJoinUrl(siteBaseUrl, tripId);
 
     const description = buildEventDescription({
       tripId,
@@ -299,7 +312,7 @@ export async function updateTrip(
       leaderContact,
       difficulty,
       gearAvailable,
-      rsvpUrl,
+      requestUrl,
       notes,
     });
 
@@ -344,6 +357,7 @@ export async function updateTrip(
       notes,
       gearAvailable: gearAvailable.join(','),
       isAllDay: isAllDay ? '1' : '0',
+      signupStatus,
       eventId: newEventId,
     };
 
@@ -354,7 +368,7 @@ export async function updateTrip(
       }
     }
 
-    return success({ tripId, eventId: newEventId, rsvpUrl });
+    return success({ tripId, eventId: newEventId, requestUrl, rsvpUrl: requestUrl });
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to update trip', 500);
   }
@@ -463,7 +477,7 @@ export async function syncTripsWithCalendar(env: Env, siteBaseUrl: string): Prom
       ? addDaysToDateString(endParts.date, -1)
       : endParts.date;
 
-    const rsvpUrl = getRsvpUrl(siteBaseUrl, tripId);
+    const requestUrl = getTripJoinUrl(siteBaseUrl, tripId);
     const description = buildEventDescription({
       tripId,
       activity: row.activity,
@@ -473,7 +487,7 @@ export async function syncTripsWithCalendar(env: Env, siteBaseUrl: string): Prom
       leaderContact: row.leaderContact,
       difficulty: row.difficulty,
       gearAvailable: normalizeGearList(row.gearAvailable),
-      rsvpUrl,
+      requestUrl,
       notes: row.notes,
     });
 

@@ -3,7 +3,7 @@
   <head>
     {{> head
       title="Trips | UT Canoe & Hiking Club"
-      description="Browse upcoming trips and RSVP to join adventures with the UT Canoe & Hiking Club."
+      description="Browse upcoming trips and request to join adventures with the UT Canoe & Hiking Club."
     }}
     <script type="module" src="/js/core.js"></script>
     <script type="module" src="/js/animations.js"></script>
@@ -15,7 +15,7 @@
     <main id="main">
       {{> hero-compact
         heroTitle="Upcoming Trips"
-        heroDescription="Browse adventures and RSVP to join."
+        heroDescription="Browse adventures and request to join."
       }}
 
       <!-- Calendar -->
@@ -50,11 +50,11 @@
       </section>
     </main>
 
-    <!-- RSVP Slide-Out Panel -->
+    <!-- Trip Action Slide-Out Panel -->
     <div class="slide-panel-backdrop" data-panel-backdrop></div>
-    <aside class="slide-panel" data-rsvp-panel aria-label="RSVP Form">
+    <aside class="slide-panel" data-signup-panel aria-label="Trip Signup Panel">
       <div class="slide-panel-header">
-        <h3>RSVP</h3>
+        <h3 data-panel-title>Request to Join</h3>
         <button class="slide-panel-close" data-panel-close aria-label="Close panel">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -65,23 +65,24 @@
 
       <div class="slide-panel-body">
         <div class="slide-panel-trip-info" data-panel-trip-info></div>
+        <div class="slide-panel-message" data-panel-message hidden></div>
 
-        <form class="form" data-rsvp-form>
-          <input type="hidden" name="tripId" data-rsvp-trip-id />
+        <form class="form" data-signup-form>
+          <input type="hidden" name="tripId" data-signup-trip-id />
 
           <div class="floating-label">
-            <input id="rsvpName" name="name" required placeholder=" " autocomplete="name" />
-            <label for="rsvpName">Your Name</label>
+            <input id="signupName" name="name" required placeholder=" " autocomplete="name" />
+            <label for="signupName">Your Name</label>
           </div>
 
           <div class="floating-label">
-            <input id="rsvpContact" name="contact" required placeholder=" " autocomplete="email" />
-            <label for="rsvpContact">Email or Phone</label>
+            <input id="signupContact" name="contact" required placeholder=" " autocomplete="email" />
+            <label for="signupContact">Email or Phone</label>
           </div>
 
           <div class="field">
-            <label for="rsvpCarpool">Carpool</label>
-            <select id="rsvpCarpool" name="carpool">
+            <label for="signupCarpool">Carpool</label>
+            <select id="signupCarpool" name="carpool">
               <option value="need ride">I need a ride</option>
               <option value="can drive">I can drive others</option>
               <option value="have ride">I have my own ride</option>
@@ -94,14 +95,14 @@
           </fieldset>
 
           <div class="floating-label">
-            <textarea id="rsvpNotes" name="notes" placeholder=" " rows="3"></textarea>
-            <label for="rsvpNotes">Notes (optional)</label>
+            <textarea id="signupNotes" name="notes" placeholder=" " rows="3"></textarea>
+            <label for="signupNotes">Notes (optional)</label>
           </div>
 
           <!-- Honeypot -->
           <input name="website" tabindex="-1" autocomplete="off" class="sr-only" />
 
-          <button class="btn btn-primary" type="submit">Submit RSVP</button>
+          <button class="btn btn-primary" type="submit" data-panel-submit>Submit Request</button>
           <div class="status" data-form-status hidden></div>
         </form>
       </div>
