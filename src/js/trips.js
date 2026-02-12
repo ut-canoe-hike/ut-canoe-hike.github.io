@@ -67,13 +67,14 @@ const SIGNUP_STATUS_META = {
 
 function normalizeSignupStatus(value) {
   const status = String(value || '').trim().toUpperCase();
-  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
-  if (status === 'FULL') return 'FULL';
-  return 'REQUEST_OPEN';
+  if (status === 'REQUEST_OPEN' || status === 'MEETING_ONLY' || status === 'FULL') {
+    return status;
+  }
+  throw new Error(`Invalid signup status: ${status || '(missing)'}`);
 }
 
 function getSignupActionMeta(trip) {
-  return SIGNUP_STATUS_META[normalizeSignupStatus(trip?.signupStatus)] || SIGNUP_STATUS_META.REQUEST_OPEN;
+  return SIGNUP_STATUS_META[normalizeSignupStatus(trip?.signupStatus)];
 }
 
 function getActivityMeta(activity) {
@@ -82,22 +83,6 @@ function getActivityMeta(activity) {
 
 function getErrorMessage(err, fallback) {
   return err instanceof Error && err.message ? err.message : fallback;
-}
-
-function isNotFoundError(err) {
-  return err instanceof Error && /not found/i.test(err.message);
-}
-
-async function submitTripRequest(payload) {
-  try {
-    return await api('POST', '/api/requests', payload);
-  } catch (err) {
-    // Compatibility fallback for older deployed Workers that still expose /api/rsvp only.
-    if (isNotFoundError(err)) {
-      return api('POST', '/api/rsvp', payload);
-    }
-    throw err;
-  }
 }
 
 // ============================================
@@ -366,7 +351,7 @@ function initSignupPanel() {
     }
 
     try {
-      await submitTripRequest({
+      await api('POST', '/api/requests', {
         tripId: tripIdInput.value,
         name: form.name.value.trim(),
         contact: form.contact.value.trim(),
@@ -404,6 +389,9 @@ function initSignupPanel() {
     }
 
     if (gearField && gearOptions) {
+      if (trip.gearAvailable != null && !Array.isArray(trip.gearAvailable)) {
+        throw new Error(`Invalid gearAvailable for trip ${trip.tripId}.`);
+      }
       const available = Array.isArray(trip.gearAvailable) ? trip.gearAvailable : [];
       if (available.length) {
         gearField.hidden = false;

@@ -54,9 +54,10 @@ function getTripJoinUrl(siteBaseUrl: string, tripId: string): string {
 
 function normalizeSignupStatus(value: unknown): TripSignupStatus {
   const status = String(value ?? '').trim().toUpperCase();
+  if (status === 'REQUEST_OPEN') return 'REQUEST_OPEN';
   if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
   if (status === 'FULL') return 'FULL';
-  return 'REQUEST_OPEN';
+  throw new Error(`Invalid signupStatus: ${status || '(missing)'}`);
 }
 
 // Public: list upcoming trips
@@ -240,7 +241,7 @@ export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string)
       signupStatus,
     });
 
-    return success({ tripId, eventId, requestUrl, rsvpUrl: requestUrl });
+    return success({ tripId, eventId, requestUrl });
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to create trip', 500);
   }
@@ -368,7 +369,7 @@ export async function updateTrip(
       }
     }
 
-    return success({ tripId, eventId: newEventId, requestUrl, rsvpUrl: requestUrl });
+    return success({ tripId, eventId: newEventId, requestUrl });
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to update trip', 500);
   }
@@ -492,7 +493,7 @@ export async function syncTripsWithCalendar(env: Env, siteBaseUrl: string): Prom
     });
 
     const calendarEvent: CalendarEvent = {
-      summary: row.title || 'UTCH Trip',
+      summary: requiredString(row.title, `title for trip ${tripId}`),
       description,
       location: row.location || undefined,
       start: isAllDay

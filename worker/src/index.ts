@@ -27,8 +27,7 @@ export default {
     // Get client IP for rate limiting
     const clientIp = request.headers.get('CF-Connecting-IP') ?? 'unknown';
 
-    // Derive site base URL from allowed origin
-    const siteBaseUrl = (env.SITE_BASE_URL || env.ALLOWED_ORIGIN).replace(/\/$/, '');
+    const siteBaseUrl = requireSiteBaseUrl(env);
 
     try {
       let response: Response;
@@ -50,7 +49,7 @@ export default {
       } else if (path === '/api/trips/admin' && method === 'POST') {
         const body = await parseJson<{ officerSecret: string }>(request);
         response = await listTripsAdmin(env, body);
-      } else if ((path === '/api/rsvp' || path === '/api/requests') && method === 'POST') {
+      } else if (path === '/api/requests' && method === 'POST') {
         const body = await parseJson<RequestInput>(request);
         response = await createRequest(env, body);
       } else if (path === '/api/requests/by-trip' && method === 'POST') {
@@ -93,7 +92,7 @@ export default {
     }
   },
   async scheduled(event: ScheduledEvent, env: Env): Promise<void> {
-    const siteBaseUrl = (env.SITE_BASE_URL || env.ALLOWED_ORIGIN).replace(/\/$/, '');
+    const siteBaseUrl = requireSiteBaseUrl(env);
     event.waitUntil(syncTripsWithCalendar(env, siteBaseUrl));
   },
 };
@@ -114,10 +113,20 @@ function corsResponse(env: Env, response: Response): Response {
 
 async function parseJson<T>(request: Request): Promise<T> {
   const text = await request.text();
-  if (!text.trim()) return {} as T;
+  if (!text.trim()) {
+    throw new Error('Missing JSON body');
+  }
   try {
     return JSON.parse(text) as T;
   } catch {
     throw new Error('Invalid JSON body');
   }
+}
+
+function requireSiteBaseUrl(env: Env): string {
+  const siteBaseUrl = String(env.SITE_BASE_URL ?? '').trim();
+  if (!siteBaseUrl) {
+    throw new Error('Missing required SITE_BASE_URL secret');
+  }
+  return siteBaseUrl.replace(/\/$/, '');
 }

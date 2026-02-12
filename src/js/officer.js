@@ -23,9 +23,10 @@ function isNotFoundError(err) {
 
 function normalizeSignupStatus(value) {
   const status = String(value || '').trim().toUpperCase();
+  if (status === 'REQUEST_OPEN') return 'REQUEST_OPEN';
   if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
   if (status === 'FULL') return 'FULL';
-  return 'REQUEST_OPEN';
+  throw new Error(`Invalid signup status: ${status || '(missing)'}`);
 }
 
 // ============================================
@@ -220,8 +221,14 @@ function initOfficerPortal() {
     }
 
     listEl.innerHTML = requests.map((request) => {
-      const safeRequestId = escapeHTML(String(request.requestId || ''));
-      const canMutate = !String(request.requestId || '').startsWith('legacy-');
+      if (!request?.requestId) {
+        throw new Error('Request data is missing requestId.');
+      }
+      if (!Array.isArray(request.gearNeeded)) {
+        throw new Error(`Request ${request.requestId} has invalid gearNeeded format.`);
+      }
+      const safeRequestId = escapeHTML(String(request.requestId));
+      const canMutate = true;
       const gear = Array.isArray(request.gearNeeded) && request.gearNeeded.length
         ? request.gearNeeded.map(item => escapeHTML(String(item))).join(', ')
         : 'None listed';
@@ -277,7 +284,10 @@ function initOfficerPortal() {
 
     try {
       const data = await api('POST', '/api/requests/by-trip', { officerSecret, tripId });
-      const requests = Array.isArray(data.requests) ? data.requests : [];
+      if (!Array.isArray(data.requests)) {
+        throw new Error('Invalid API response: requests list is missing.');
+      }
+      const requests = data.requests;
       const pending = requests.filter((req) => req.status === 'PENDING');
       const approved = requests.filter((req) => req.status === 'APPROVED');
 
@@ -318,7 +328,10 @@ function initOfficerPortal() {
     try {
       const data = await api('POST', '/api/trips/admin', { officerSecret });
       tripsById.clear();
-      const trips = Array.isArray(data.trips) ? data.trips : [];
+      if (!Array.isArray(data.trips)) {
+        throw new Error('Invalid API response: trips list is missing.');
+      }
+      const trips = data.trips;
       for (const trip of trips) {
         trip.signupStatus = normalizeSignupStatus(trip.signupStatus);
         tripsById.set(trip.tripId, trip);

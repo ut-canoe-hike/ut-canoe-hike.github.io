@@ -5,7 +5,7 @@ export interface Env {
   CALENDAR_ID: string;
   OFFICER_PASSCODE: string;
   ALLOWED_ORIGIN: string;
-  SITE_BASE_URL?: string;
+  SITE_BASE_URL: string;
 }
 
 export type TripSignupStatus = 'REQUEST_OPEN' | 'MEETING_ONLY' | 'FULL';

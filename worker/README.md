@@ -111,7 +111,6 @@ which calls `POST /api/sync` with the officer passcode.
 | DELETE | /api/trips/:id | Officer | Delete a trip |
 | POST | /api/trips/admin | Officer | List all trips (admin view) |
 | POST | /api/requests | Public | Submit trip join request |
-| POST | /api/rsvp | Public | Backward-compatible alias for submit request |
 | POST | /api/requests/by-trip | Officer | List requests for one trip |
 | PATCH | /api/requests/:id/status | Officer | Update request status |
 | POST | /api/suggest | Public | Submit trip suggestion |

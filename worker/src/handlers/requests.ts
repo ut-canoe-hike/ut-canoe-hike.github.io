@@ -30,9 +30,10 @@ function generateRequestId(): string {
 
 function normalizeSignupStatus(value: unknown): 'REQUEST_OPEN' | 'MEETING_ONLY' | 'FULL' {
   const status = String(value ?? '').trim().toUpperCase();
+  if (status === 'REQUEST_OPEN') return 'REQUEST_OPEN';
   if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
   if (status === 'FULL') return 'FULL';
-  return 'REQUEST_OPEN';
+  throw new Error(`Invalid signupStatus: ${status || '(missing)'}`);
 }
 
 export async function createRequest(env: Env, body: RequestInput): Promise<Response> {
@@ -95,18 +96,24 @@ export async function listRequestsByTrip(
     const requests = rows
       .filter(row => row.tripId?.trim() === tripId)
       .map((row, index) => {
-        const statusRaw = row.status?.trim().toUpperCase() || 'PENDING';
-        const status: RequestStatus = isValidRequestStatus(statusRaw) ? statusRaw : 'PENDING';
+        const rowNumber = index + 2;
+        const statusRaw = String(row.status ?? '').trim().toUpperCase();
+        if (!isValidRequestStatus(statusRaw)) {
+          throw new Error(`Invalid request status at row ${rowNumber}`);
+        }
+        const requestId = requiredString(row.requestId, `requestId at row ${rowNumber}`);
+        const name = requiredString(row.name, `name at row ${rowNumber}`);
+        const contact = requiredString(row.contact, `contact at row ${rowNumber}`);
         return {
-          requestId: row.requestId?.trim() || `legacy-${index + 1}`,
-          submittedAt: row.submittedAt || '',
-          tripId: row.tripId?.trim() || '',
-          name: row.name?.trim() || '',
-          contact: row.contact?.trim() || '',
-          carpool: row.carpool?.trim() || '',
+          requestId,
+          submittedAt: requiredString(row.submittedAt, `submittedAt at row ${rowNumber}`),
+          tripId: requiredString(row.tripId, `tripId at row ${rowNumber}`),
+          name,
+          contact,
+          carpool: optionalString(row.carpool),
           gearNeeded: normalizeGearList(row.gearNeeded),
-          notes: row.notes?.trim() || '',
-          status,
+          notes: optionalString(row.notes),
+          status: statusRaw as RequestStatus,
         };
       })
       .sort((a, b) => a.submittedAt.localeCompare(b.submittedAt));
@@ -145,9 +152,10 @@ export async function updateRequestStatus(
     await updateCell(token, env.SHEET_ID, REQUESTS_SHEET, found.rowIndex, statusColIndex, nextStatus);
 
     const updatedAtColIndex = await getColumnIndex(token, env.SHEET_ID, REQUESTS_SHEET, 'updatedAt');
-    if (updatedAtColIndex > 0) {
-      await updateCell(token, env.SHEET_ID, REQUESTS_SHEET, found.rowIndex, updatedAtColIndex, new Date().toISOString());
+    if (updatedAtColIndex < 1) {
+      return error('Requests sheet is missing updatedAt column', 500);
     }
+    await updateCell(token, env.SHEET_ID, REQUESTS_SHEET, found.rowIndex, updatedAtColIndex, new Date().toISOString());
 
     return success({ requestId, status: nextStatus });
   } catch (err) {
