@@ -18,6 +18,11 @@ const REQUEST_HEADERS = [
   'updatedAt',
 ];
 
+function isMissingSheetError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /Unable to parse range/i.test(message) || /sheet.*not found/i.test(message);
+}
+
 function isValidRequestStatus(value: string): value is RequestStatus {
   return value === 'PENDING' || value === 'APPROVED' || value === 'DECLINED';
 }
@@ -84,7 +89,15 @@ export async function listRequestsByTrip(
 
     const tripId = requiredString(body.tripId, 'tripId');
     const token = await getAccessToken(env);
-    const rows = await getRows(token, env.SHEET_ID, REQUESTS_SHEET);
+    let rows: Array<Record<string, string>> = [];
+    try {
+      rows = await getRows(token, env.SHEET_ID, REQUESTS_SHEET);
+    } catch (err) {
+      if (isMissingSheetError(err)) {
+        return success({ requests: [] });
+      }
+      throw err;
+    }
 
     const requests = rows
       .filter(row => row.tripId?.trim() === tripId)
@@ -133,7 +146,15 @@ export async function updateRequestStatus(
     }
 
     const token = await getAccessToken(env);
-    const found = await findRowByColumn(token, env.SHEET_ID, REQUESTS_SHEET, 'requestId', requestId);
+    let found: Awaited<ReturnType<typeof findRowByColumn>>;
+    try {
+      found = await findRowByColumn(token, env.SHEET_ID, REQUESTS_SHEET, 'requestId', requestId);
+    } catch (err) {
+      if (isMissingSheetError(err)) {
+        return error('Request not found', 404);
+      }
+      throw err;
+    }
     if (!found) {
       return error('Request not found', 404);
     }
