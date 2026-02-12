@@ -17,8 +17,14 @@ function getErrorMessage(err, fallback) {
   return err instanceof Error && err.message ? err.message : fallback;
 }
 
-function isNotFoundError(err) {
-  return err instanceof Error && /not found/i.test(err.message);
+function summarizeWarnings(warnings) {
+  if (!Array.isArray(warnings) || !warnings.length) return '';
+  const list = warnings
+    .map((item) => String(item || '').trim())
+    .filter(Boolean);
+  if (!list.length) return '';
+  if (list.length === 1) return `Warning: ${list[0]}`;
+  return `Warnings (${list.length}): ${list.slice(0, 2).join(' | ')}${list.length > 2 ? ' | ...' : ''}`;
 }
 
 function normalizeSignupStatus(value) {
@@ -198,6 +204,20 @@ function initOfficerPortal() {
     return settings;
   }
 
+  function validateHttpsSettingUrl(value, fieldLabel) {
+    const trimmed = String(value || '').trim();
+    let parsed;
+    try {
+      parsed = new URL(trimmed);
+    } catch {
+      return `${fieldLabel} must be a valid URL.`;
+    }
+    if (parsed.protocol !== 'https:') {
+      return `${fieldLabel} must start with https://`;
+    }
+    return '';
+  }
+
   function fillEditForm(trip) {
     if (!editForm || !trip) return;
     editForm.title.value = trip.title || '';
@@ -268,7 +288,6 @@ function initOfficerPortal() {
         throw new Error(`Request ${request.requestId} has invalid gearNeeded format.`);
       }
       const safeRequestId = escapeHTML(String(request.requestId));
-      const canMutate = true;
       const gear = Array.isArray(request.gearNeeded) && request.gearNeeded.length
         ? request.gearNeeded.map(item => escapeHTML(String(item))).join(', ')
         : 'None listed';
@@ -280,17 +299,17 @@ function initOfficerPortal() {
 
       const actions = kind === 'pending'
         ? `
-          <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
-          <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+          <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED">Approve</button>
+          <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED">Decline</button>
         `
         : kind === 'approved'
           ? `
-            <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move to Pending</button>
-            <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+            <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING">Move to Pending</button>
+            <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED">Decline</button>
           `
           : `
-            <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
-            <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move to Pending</button>
+            <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED">Approve</button>
+            <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING">Move to Pending</button>
           `;
 
       return `
@@ -347,15 +366,7 @@ function initOfficerPortal() {
         `Loaded ${pending.length} pending, ${approved.length} approved, and ${declined.length} declined.`
       );
     } catch (err) {
-      if (isNotFoundError(err)) {
-        setStatus(
-          requestsStatus,
-          'err',
-          'Request routes are not deployed yet. Deploy the Cloudflare Worker and retry.'
-        );
-      } else {
-        setStatus(requestsStatus, 'err', getErrorMessage(err, 'Unable to load trip requests.'));
-      }
+      setStatus(requestsStatus, 'err', getErrorMessage(err, 'Unable to load trip requests.'));
       if (pendingList) pendingList.innerHTML = '<li class="requests-empty">Unable to load pending requests.</li>';
       if (approvedList) approvedList.innerHTML = '<li class="requests-empty">Unable to load roster.</li>';
       if (declinedList) declinedList.innerHTML = '<li class="requests-empty">Unable to load declined requests.</li>';
@@ -371,7 +382,12 @@ function initOfficerPortal() {
         throw new Error('Invalid site settings response.');
       }
       fillSiteSettingsForm(data.settings);
-      setStatus(settingsStatus, 'ok', 'Site settings loaded.');
+      const warningSummary = summarizeWarnings(data.warnings);
+      setStatus(
+        settingsStatus,
+        'ok',
+        warningSummary ? `Site settings loaded. ${warningSummary}` : 'Site settings loaded.'
+      );
     } catch (err) {
       setStatus(settingsStatus, 'err', getErrorMessage(err, 'Unable to load site settings.'));
     }
@@ -455,15 +471,7 @@ function initOfficerPortal() {
       await loadTripRequests(activeRequestsTripId);
       setStatus(requestsStatus, 'ok', 'Request updated.');
     } catch (err) {
-      if (isNotFoundError(err)) {
-        setStatus(
-          requestsStatus,
-          'err',
-          'Request routes are not deployed yet. Deploy the Cloudflare Worker and retry.'
-        );
-      } else {
-        setStatus(requestsStatus, 'err', getErrorMessage(err, 'Unable to update request.'));
-      }
+      setStatus(requestsStatus, 'err', getErrorMessage(err, 'Unable to update request.'));
       button.disabled = false;
     }
   });
@@ -495,16 +503,33 @@ function initOfficerPortal() {
     if (!officerSecret) return;
     setStatus(settingsStatus, '', 'Saving settings...');
 
+    const settingsPayload = collectSiteSettingsPayload(settingsForm);
+    const volLinkUrlError = validateHttpsSettingUrl(settingsPayload.volLinkUrl, 'VOLlink URL');
+    if (volLinkUrlError) {
+      setStatus(settingsStatus, 'err', volLinkUrlError);
+      return;
+    }
+    const groupMeUrlError = validateHttpsSettingUrl(settingsPayload.groupMeUrl, 'GroupMe URL');
+    if (groupMeUrlError) {
+      setStatus(settingsStatus, 'err', groupMeUrlError);
+      return;
+    }
+
     try {
       const data = await api('POST', '/api/site-settings', {
         officerSecret,
-        settings: collectSiteSettingsPayload(settingsForm),
+        settings: settingsPayload,
       });
       if (!data?.settings || typeof data.settings !== 'object') {
         throw new Error('Invalid settings response.');
       }
       fillSiteSettingsForm(data.settings);
-      setStatus(settingsStatus, 'ok', 'Site settings saved.');
+      const warningSummary = summarizeWarnings(data.warnings);
+      setStatus(
+        settingsStatus,
+        'ok',
+        warningSummary ? `Site settings saved. ${warningSummary}` : 'Site settings saved.'
+      );
     } catch (err) {
       setStatus(settingsStatus, 'err', getErrorMessage(err, 'Unable to save site settings.'));
     }

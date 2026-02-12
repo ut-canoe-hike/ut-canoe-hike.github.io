@@ -26,6 +26,10 @@ const DEFAULT_SITE_SETTINGS = {
 
 type SiteSettingKey = keyof typeof DEFAULT_SITE_SETTINGS;
 type SiteSettingsMap = Record<SiteSettingKey, string>;
+interface ParsedSiteSettings {
+  settings: SiteSettingsMap;
+  warnings: string[];
+}
 
 const SITE_SETTING_KEYS = Object.keys(DEFAULT_SITE_SETTINGS) as SiteSettingKey[];
 const SITE_SETTING_KEY_SET = new Set<string>(SITE_SETTING_KEYS);
@@ -75,9 +79,10 @@ function normalizeSettingValue(key: SiteSettingKey, raw: unknown): string {
   return normalizeMessage(raw, key);
 }
 
-function parseSiteSettingsRows(rows: Array<Record<string, string>>): SiteSettingsMap {
+function parseSiteSettingsRows(rows: Array<Record<string, string>>): ParsedSiteSettings {
   const settings: SiteSettingsMap = { ...DEFAULT_SITE_SETTINGS };
   const seen = new Set<string>();
+  const warnings: string[] = [];
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2;
@@ -85,19 +90,28 @@ function parseSiteSettingsRows(rows: Array<Record<string, string>>): SiteSetting
     if (!rawKey) return;
 
     if (!SITE_SETTING_KEY_SET.has(rawKey)) {
-      throw new Error(`SiteSettings has unsupported key "${rawKey}" at row ${rowNumber}`);
+      warnings.push(`Ignoring unsupported SiteSettings key "${rawKey}" at row ${rowNumber}.`);
+      return;
     }
     if (seen.has(rawKey)) {
-      throw new Error(`SiteSettings has duplicate key "${rawKey}" at row ${rowNumber}`);
+      warnings.push(`Ignoring duplicate SiteSettings key "${rawKey}" at row ${rowNumber}.`);
+      return;
     }
 
     const key = rawKey as SiteSettingKey;
-    const value = normalizeSettingValue(key, row.value);
+    let value: string;
+    try {
+      value = normalizeSettingValue(key, row.value);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'invalid value';
+      warnings.push(`Ignoring invalid SiteSettings value for "${key}" at row ${rowNumber}: ${message}.`);
+      return;
+    }
     settings[key] = value;
     seen.add(rawKey);
   });
 
-  return settings;
+  return { settings, warnings };
 }
 
 export async function getSiteSettings(env: Env): Promise<Response> {
@@ -113,8 +127,11 @@ export async function getSiteSettings(env: Env): Promise<Response> {
       }
     }
 
-    const settings = parseSiteSettingsRows(rows);
-    return success({ settings });
+    const parsed = parseSiteSettingsRows(rows);
+    if (parsed.warnings.length) {
+      console.warn('Site settings warnings:', parsed.warnings.join(' | '));
+    }
+    return success(parsed);
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to load site settings', 500);
   }
@@ -136,6 +153,18 @@ export async function updateSiteSettings(
     const incomingKeys = Object.keys(body.settings);
     if (!incomingKeys.length) {
       return error('settings must include at least one key', 400);
+    }
+
+    const validatedUpdates: Array<{ key: SiteSettingKey; value: string }> = [];
+    for (const rawKey of incomingKeys) {
+      if (!SITE_SETTING_KEY_SET.has(rawKey)) {
+        return error(`Unsupported setting key: ${rawKey}`, 400);
+      }
+      const key = rawKey as SiteSettingKey;
+      validatedUpdates.push({
+        key,
+        value: normalizeSettingValue(key, body.settings[key]),
+      });
     }
 
     const token = await getAccessToken(env);
@@ -160,36 +189,34 @@ export async function updateSiteSettings(
     const valueColIndex = await getColumnIndex(token, env.SHEET_ID, SITE_SETTINGS_SHEET, 'value');
     const updatedAtColIndex = await getColumnIndex(token, env.SHEET_ID, SITE_SETTINGS_SHEET, 'updatedAt');
 
-    for (const rawKey of incomingKeys) {
-      if (!SITE_SETTING_KEY_SET.has(rawKey)) {
-        return error(`Unsupported setting key: ${rawKey}`, 400);
-      }
+    const hasExistingRowsToUpdate = validatedUpdates.some(({ key }) => rowIndexByKey.has(key));
+    if (hasExistingRowsToUpdate && (valueColIndex < 1 || updatedAtColIndex < 1)) {
+      throw new Error('SiteSettings sheet is missing required columns: value and updatedAt');
+    }
 
-      const key = rawKey as SiteSettingKey;
-      const normalizedValue = normalizeSettingValue(key, body.settings[key]);
+    for (const { key, value } of validatedUpdates) {
       const existingRowIndex = rowIndexByKey.get(key);
 
       if (!existingRowIndex) {
         await appendRow(token, env.SHEET_ID, SITE_SETTINGS_SHEET, SITE_SETTINGS_HEADERS, {
           key,
-          value: normalizedValue,
+          value,
           updatedAt: new Date().toISOString(),
         });
         continue;
       }
 
-      if (valueColIndex < 1 || updatedAtColIndex < 1) {
-        throw new Error('SiteSettings sheet is missing required columns: value and updatedAt');
-      }
-
-      await updateCell(token, env.SHEET_ID, SITE_SETTINGS_SHEET, existingRowIndex, valueColIndex, normalizedValue);
+      await updateCell(token, env.SHEET_ID, SITE_SETTINGS_SHEET, existingRowIndex, valueColIndex, value);
       await updateCell(token, env.SHEET_ID, SITE_SETTINGS_SHEET, existingRowIndex, updatedAtColIndex, new Date().toISOString());
     }
 
     const refreshedRows = await getRows(token, env.SHEET_ID, SITE_SETTINGS_SHEET);
-    const settings = parseSiteSettingsRows(refreshedRows);
+    const parsed = parseSiteSettingsRows(refreshedRows);
+    if (parsed.warnings.length) {
+      console.warn('Site settings warnings after update:', parsed.warnings.join(' | '));
+    }
 
-    return success({ settings });
+    return success(parsed);
   } catch (err) {
     return error(err instanceof Error ? err.message : 'Failed to update site settings', 500);
   }

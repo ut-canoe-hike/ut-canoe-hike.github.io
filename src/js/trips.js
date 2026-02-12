@@ -340,20 +340,36 @@ function initSignupPanel() {
     // Keep static copy when settings are unavailable.
   });
 
+  function setPanelMessage(text) {
+    messageEl.hidden = false;
+    messageEl.textContent = '';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = text;
+    messageEl.appendChild(paragraph);
+  }
+
   function setPanelMode(mode) {
     const submitBtn = form.querySelector('[data-panel-submit]');
 
     if (mode === 'meeting') {
       titleEl.textContent = 'Attend Meeting to Sign Up';
-      messageEl.hidden = false;
-      messageEl.innerHTML = `<p>${escapeHTML(getPanelMessage('meetingOnlyMessage', 'This trip is meeting sign-up only. Please attend a weekly meeting to request a spot.'))}</p>`;
+      setPanelMessage(
+        getPanelMessage(
+          'meetingOnlyMessage',
+          'This trip is meeting sign-up only. Please attend a weekly meeting to request a spot.'
+        )
+      );
       form.hidden = true;
       return;
     }
 
     titleEl.textContent = 'Request to Join';
-    messageEl.hidden = false;
-    messageEl.innerHTML = `<p>${escapeHTML(getPanelMessage('requestIntroMessage', 'Submit your request below. Officers review requests before confirming rosters.'))}</p>`;
+    setPanelMessage(
+      getPanelMessage(
+        'requestIntroMessage',
+        'Submit your request below. Officers review requests before confirming rosters.'
+      )
+    );
     form.hidden = false;
     if (submitBtn) submitBtn.textContent = 'Submit Request';
   }

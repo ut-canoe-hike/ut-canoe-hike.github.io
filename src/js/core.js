@@ -26,6 +26,12 @@ export function getDisplayTimeZone() {
 
 let siteSettingsPromise = null;
 
+function pageUsesSiteSettings() {
+  return Boolean(
+    document.querySelector('[data-setting-text], [data-setting-href], [data-setting-mailto]')
+  );
+}
+
 function applySiteSettings(settings) {
   if (!settings || typeof settings !== 'object') return;
 
@@ -140,14 +146,20 @@ export async function api(method, path, body = null) {
 export async function loadSiteSettings() {
   if (!siteSettingsPromise) {
     siteSettingsPromise = (async () => {
-      const data = await api('GET', '/api/site-settings');
-      const settings = data?.settings;
-      if (!settings || typeof settings !== 'object') {
-        throw new Error('Invalid site settings response.');
+      try {
+        const data = await api('GET', '/api/site-settings');
+        const settings = data?.settings;
+        if (!settings || typeof settings !== 'object') {
+          throw new Error('Invalid site settings response.');
+        }
+        window.UTCH_SITE_SETTINGS = settings;
+        applySiteSettings(settings);
+        return settings;
+      } catch (err) {
+        // Allow retry after transient failures.
+        siteSettingsPromise = null;
+        throw err;
       }
-      window.UTCH_SITE_SETTINGS = settings;
-      applySiteSettings(settings);
-      return settings;
     })();
   }
   return siteSettingsPromise;
@@ -316,8 +328,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollProgress();
   initPageLoad();
   initPageTransitions();
-  loadSiteSettings().catch((err) => {
-    const message = err instanceof Error ? err.message : 'Failed to load site settings.';
-    console.error(message);
-  });
+  if (pageUsesSiteSettings()) {
+    loadSiteSettings().catch((err) => {
+      const message = err instanceof Error ? err.message : 'Failed to load site settings.';
+      console.error(message);
+    });
+  }
 });
