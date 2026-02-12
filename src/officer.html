@@ -60,20 +60,19 @@
             <article class="card card--ornate officer-card--trip">
               <h2>Trip Form</h2>
               <form class="form trip-form" data-officer-trip-form>
-                <div class="row">
-                  <div class="field">
-                    <label for="tripMode">Mode</label>
-                    <select id="tripMode" data-trip-mode-select>
-                      <option value="CREATE" selected>Create New Trip</option>
-                      <option value="EDIT">Edit Existing Trip</option>
-                    </select>
-                  </div>
-                  <div class="field" data-trip-select-row hidden>
-                    <label for="tripEditId">Select Trip</label>
-                    <select id="tripEditId" data-trip-select>
-                      <option value="" disabled selected>Loading trips...</option>
-                    </select>
-                  </div>
+                <div class="field">
+                  <label for="tripMode">Mode</label>
+                  <select id="tripMode" data-trip-mode-select>
+                    <option value="CREATE" selected>Create New Trip</option>
+                    <option value="EDIT">Edit Existing Trip</option>
+                  </select>
+                </div>
+
+                <div class="field" data-trip-select-row hidden>
+                  <label for="tripEditId">Select Trip</label>
+                  <select id="tripEditId" data-trip-select>
+                    <option value="" disabled selected>Select a trip...</option>
+                  </select>
                 </div>
 
                 <div class="row">

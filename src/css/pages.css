@@ -16,22 +16,30 @@
 
 .officer-stack {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
   gap: 1.6rem;
   align-items: start;
 }
 
-.officer-stack > .card {
-  min-height: 100%;
+.officer-card--trip {
+  grid-column: 1 / -1;
+}
+
+.officer-card--compact {
+  grid-column: 1;
+  max-width: 560px;
 }
 
 .officer-card--requests {
-  grid-column: 1 / -1;
-  min-height: auto;
+  grid-column: 2;
 }
 
 .officer-card--compact .form {
   align-content: start;
+}
+
+.officer-card--requests .requests-board {
+  grid-template-columns: 1fr;
 }
 
 .trip-form .row {
@@ -62,8 +70,11 @@
     grid-template-columns: 1fr;
   }
 
-  .officer-stack > .card {
-    min-height: auto;
+  .officer-card--trip,
+  .officer-card--compact,
+  .officer-card--requests {
+    grid-column: auto;
+    max-width: none;
   }
 }
 

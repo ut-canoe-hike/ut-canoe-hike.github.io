@@ -498,6 +498,8 @@ function initOfficerPortal() {
     fillTripForm(trip);
   });
 
+  updateTripFormMode();
+
   requestsTripSelect?.addEventListener('change', () => {
     loadTripRequests(requestsTripSelect.value);
   });
