@@ -22,6 +22,8 @@ node_modules/
 # Codex tooling
 .codex/
 SCRATCHPAD.md
+/AGENTS.md
+/agents.md
 
 # Claude Code
 .claude/
