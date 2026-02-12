@@ -1,6 +1,7 @@
-import type { Env, Trip, TripInput, TripSignupStatus } from '../types';
+import type { Env, Trip, TripInput } from '../types';
 import { getAccessToken } from '../auth';
 import { getRows, appendRow, findRowByColumn, updateCell, deleteRow, getColumnIndex } from '../sheets';
+import { parseSignupStatusInput, readSignupStatusFromRow } from '../signupStatus';
 import {
   createEvent,
   deleteEvent,
@@ -52,14 +53,6 @@ function getTripJoinUrl(siteBaseUrl: string, tripId: string): string {
   return `${siteBaseUrl}/trips.html?tripId=${encodeURIComponent(tripId)}`;
 }
 
-function normalizeSignupStatus(value: unknown): TripSignupStatus {
-  const status = String(value ?? '').trim().toUpperCase();
-  if (status === 'REQUEST_OPEN') return 'REQUEST_OPEN';
-  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
-  if (status === 'FULL') return 'FULL';
-  throw new Error(`Invalid signupStatus: ${status || '(missing)'}`);
-}
-
 // Public: list upcoming trips
 export async function listTrips(env: Env): Promise<Response> {
   try {
@@ -87,7 +80,7 @@ export async function listTrips(env: Env): Promise<Response> {
         difficulty: row.difficulty?.trim() ?? '',
         gearAvailable: normalizeGearList(row.gearAvailable),
         isAllDay: row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true',
-        signupStatus: normalizeSignupStatus(row.signupStatus),
+        signupStatus: readSignupStatusFromRow(row.signupStatus, `signupStatus for trip ${tripId}`),
       });
     }
 
@@ -127,7 +120,7 @@ export async function listTripsAdmin(env: Env, body: { officerSecret: string }):
         notes: row.notes?.trim() ?? '',
         gearAvailable: normalizeGearList(row.gearAvailable),
         isAllDay: row.isAllDay === '1' || row.isAllDay?.toLowerCase() === 'true',
-        signupStatus: normalizeSignupStatus(row.signupStatus),
+        signupStatus: readSignupStatusFromRow(row.signupStatus, `signupStatus for trip ${row.tripId?.trim() || '(unknown)'}`),
       }));
 
     trips.sort((a, b) => a.start.localeCompare(b.start));
@@ -155,7 +148,7 @@ export async function createTrip(env: Env, body: TripInput, siteBaseUrl: string)
     const meetPlace = optionalString(body.meetPlace);
     const notes = optionalString(body.notes);
     const gearAvailable = normalizeGearList(body.gearAvailable);
-    const signupStatus = normalizeSignupStatus(body.signupStatus);
+    const signupStatus = parseSignupStatusInput(body.signupStatus);
 
     const startDate = requiredString(body.startDate, 'startDate');
     const endDate = optionalString(body.endDate) || startDate;
@@ -275,7 +268,7 @@ export async function updateTrip(
     const meetPlace = optionalString(body.meetPlace);
     const notes = optionalString(body.notes);
     const gearAvailable = normalizeGearList(body.gearAvailable);
-    const signupStatus = normalizeSignupStatus(body.signupStatus);
+    const signupStatus = parseSignupStatusInput(body.signupStatus);
 
     const startDate = requiredString(body.startDate, 'startDate');
     const endDate = optionalString(body.endDate) || startDate;

@@ -223,10 +223,10 @@ function initTripPreview() {
         emptyMessage: 'No upcoming trips scheduled. Check back soon!',
         stagger: true
       });
-    } catch {
+    } catch (err) {
       renderTripsState(container, {
         kind: 'error',
-        message: 'Unable to load trips right now.',
+        message: getErrorMessage(err, 'Unable to load trips right now.'),
         onRetry: loadPreview
       });
     }
@@ -275,10 +275,10 @@ function initTripsPage() {
       if (requestedTripId && tripMap.has(requestedTripId)) {
         openTripActionPanel(tripMap.get(requestedTripId));
       }
-    } catch {
+    } catch (err) {
       renderTripsState(container, {
         kind: 'error',
-        message: 'Unable to load trips right now.',
+        message: getErrorMessage(err, 'Unable to load trips right now.'),
         onRetry: loadTrips
       });
     }

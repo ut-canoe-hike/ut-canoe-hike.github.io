@@ -27,8 +27,6 @@ export default {
     // Get client IP for rate limiting
     const clientIp = request.headers.get('CF-Connecting-IP') ?? 'unknown';
 
-    const siteBaseUrl = requireSiteBaseUrl(env);
-
     try {
       let response: Response;
 
@@ -37,11 +35,11 @@ export default {
         response = await listTrips(env);
       } else if (path === '/api/trips' && method === 'POST') {
         const body = await parseJson<TripInput>(request);
-        response = await createTrip(env, body, siteBaseUrl);
+        response = await createTrip(env, body, requireSiteBaseUrl(env));
       } else if (path.match(/^\/api\/trips\/[^/]+$/) && method === 'PATCH') {
         const tripId = path.split('/')[3];
         const body = await parseJson<TripInput>(request);
-        response = await updateTrip(env, tripId, body, siteBaseUrl);
+        response = await updateTrip(env, tripId, body, requireSiteBaseUrl(env));
       } else if (path.match(/^\/api\/trips\/[^/]+$/) && method === 'DELETE') {
         const tripId = path.split('/')[3];
         const body = await parseJson<{ officerSecret: string }>(request);
@@ -67,7 +65,7 @@ export default {
         response = await verifyOfficer(env, body, clientIp);
       } else if (path === '/api/sync' && method === 'POST') {
         const body = await parseJson<{ officerSecret?: string }>(request);
-        response = await syncTripsRequest(env, body, siteBaseUrl);
+        response = await syncTripsRequest(env, body, requireSiteBaseUrl(env));
       } else if (path === '/health') {
         response = new Response(JSON.stringify({ ok: true, timestamp: Date.now() }), {
           headers: { 'Content-Type': 'application/json' },
@@ -82,7 +80,12 @@ export default {
       );
 
       if (shouldAutoSync) {
-        ctx.waitUntil(syncTripsWithCalendar(env, siteBaseUrl));
+        const siteBaseUrl = env.SITE_BASE_URL?.trim();
+        if (!siteBaseUrl) {
+          console.warn('Skipping auto-sync because SITE_BASE_URL is not configured.');
+        } else {
+          ctx.waitUntil(syncTripsWithCalendar(env, siteBaseUrl.replace(/\/$/, '')));
+        }
       }
 
       return corsResponse(env, response);

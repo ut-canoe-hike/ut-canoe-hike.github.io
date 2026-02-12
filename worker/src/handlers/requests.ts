@@ -1,6 +1,7 @@
 import type { Env, RequestInput, RequestStatus } from '../types';
 import { getAccessToken } from '../auth';
 import { appendRow, findRowByColumn, getColumnIndex, getRows, updateCell } from '../sheets';
+import { readSignupStatusFromRow } from '../signupStatus';
 import { error, normalizeGearList, optionalString, requiredString, success } from '../utils';
 
 const REQUESTS_SHEET = 'Requests';
@@ -28,14 +29,6 @@ function generateRequestId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function normalizeSignupStatus(value: unknown): 'REQUEST_OPEN' | 'MEETING_ONLY' | 'FULL' {
-  const status = String(value ?? '').trim().toUpperCase();
-  if (status === 'REQUEST_OPEN') return 'REQUEST_OPEN';
-  if (status === 'MEETING_ONLY') return 'MEETING_ONLY';
-  if (status === 'FULL') return 'FULL';
-  throw new Error(`Invalid signupStatus: ${status || '(missing)'}`);
-}
-
 export async function createRequest(env: Env, body: RequestInput): Promise<Response> {
   try {
     const tripId = requiredString(body.tripId, 'tripId');
@@ -51,7 +44,7 @@ export async function createRequest(env: Env, body: RequestInput): Promise<Respo
       return error('Trip not found', 404);
     }
 
-    const signupStatus = normalizeSignupStatus(trip.row.signupStatus);
+    const signupStatus = readSignupStatusFromRow(trip.row.signupStatus, `signupStatus for trip ${tripId}`);
     if (signupStatus === 'MEETING_ONLY') {
       return error('This trip is meeting sign-up only.', 400);
     }
