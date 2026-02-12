@@ -91,6 +91,12 @@
   }
 }
 
+@media (min-width: 1280px) {
+  .requests-board {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 /* ---------- Suggest Page ---------- */
 .page-suggest .card--ornate {
   max-width: 720px;

@@ -24,6 +24,40 @@ export function getDisplayTimeZone() {
   return timeZone;
 }
 
+let siteSettingsPromise = null;
+
+function applySiteSettings(settings) {
+  if (!settings || typeof settings !== 'object') return;
+
+  document.querySelectorAll('[data-setting-text]').forEach((el) => {
+    const key = el.getAttribute('data-setting-text');
+    if (!key) return;
+    const value = settings[key];
+    if (typeof value === 'string' && value.trim()) {
+      el.textContent = value;
+    }
+  });
+
+  document.querySelectorAll('[data-setting-href]').forEach((el) => {
+    const key = el.getAttribute('data-setting-href');
+    if (!key) return;
+    const value = settings[key];
+    if (typeof value === 'string' && value.trim()) {
+      el.setAttribute('href', value);
+    }
+  });
+
+  document.querySelectorAll('[data-setting-mailto]').forEach((el) => {
+    const key = el.getAttribute('data-setting-mailto');
+    if (!key) return;
+    const value = settings[key];
+    if (typeof value === 'string' && value.trim()) {
+      el.setAttribute('href', `mailto:${value}`);
+      el.textContent = value;
+    }
+  });
+}
+
 export function getDateTimePartsForInput(date, timeZone) {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone,
@@ -101,6 +135,29 @@ export async function api(method, path, body = null) {
   }
 
   return data.data;
+}
+
+export async function loadSiteSettings() {
+  if (!siteSettingsPromise) {
+    siteSettingsPromise = (async () => {
+      const data = await api('GET', '/api/site-settings');
+      const settings = data?.settings;
+      if (!settings || typeof settings !== 'object') {
+        throw new Error('Invalid site settings response.');
+      }
+      window.UTCH_SITE_SETTINGS = settings;
+      applySiteSettings(settings);
+      return settings;
+    })();
+  }
+  return siteSettingsPromise;
+}
+
+export function getSiteSetting(key) {
+  const settings = window.UTCH_SITE_SETTINGS;
+  if (!settings || typeof settings !== 'object') return '';
+  const value = settings[key];
+  return typeof value === 'string' ? value : '';
 }
 
 // ============================================
@@ -259,4 +316,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollProgress();
   initPageLoad();
   initPageTransitions();
+  loadSiteSettings().catch((err) => {
+    const message = err instanceof Error ? err.message : 'Failed to load site settings.';
+    console.error(message);
+  });
 });

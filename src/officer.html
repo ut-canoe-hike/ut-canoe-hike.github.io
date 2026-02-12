@@ -172,6 +172,69 @@
               </form>
             </article>
 
+            <!-- Site Settings -->
+            <article class="card bento-wide">
+              <h2>Site Settings</h2>
+              <p>Update links and core club messaging shown across the public site.</p>
+
+              <form class="form" data-officer-settings-form>
+                <div class="row">
+                  <div class="floating-label">
+                    <input id="settingsContactEmail" name="contactEmail" type="email" required placeholder=" " />
+                    <label for="settingsContactEmail">Contact Email</label>
+                  </div>
+                  <div class="floating-label">
+                    <input id="settingsVolLinkUrl" name="volLinkUrl" type="url" required placeholder=" " />
+                    <label for="settingsVolLinkUrl">VOLlink URL</label>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="floating-label">
+                    <input id="settingsGroupMeUrl" name="groupMeUrl" type="url" required placeholder=" " />
+                    <label for="settingsGroupMeUrl">GroupMe URL</label>
+                  </div>
+                  <div class="floating-label">
+                    <input id="settingsMeetingSchedule" name="meetingSchedule" required placeholder=" " />
+                    <label for="settingsMeetingSchedule">Meeting Schedule Label</label>
+                  </div>
+                </div>
+
+                <div class="floating-label">
+                  <input id="settingsMeetingLocation" name="meetingLocation" required placeholder=" " />
+                  <label for="settingsMeetingLocation">Meeting Location</label>
+                </div>
+
+                <div class="floating-label">
+                  <textarea id="settingsMeetingNote" name="meetingNote" required placeholder=" " rows="3"></textarea>
+                  <label for="settingsMeetingNote">Meeting Description</label>
+                </div>
+
+                <div class="floating-label">
+                  <textarea id="settingsRequestIntroMessage" name="requestIntroMessage" required placeholder=" " rows="3"></textarea>
+                  <label for="settingsRequestIntroMessage">Request Panel Intro Message</label>
+                </div>
+
+                <div class="floating-label">
+                  <textarea id="settingsMeetingOnlyMessage" name="meetingOnlyMessage" required placeholder=" " rows="3"></textarea>
+                  <label for="settingsMeetingOnlyMessage">Meeting-Only Message</label>
+                </div>
+
+                <div class="floating-label">
+                  <textarea id="settingsFullTripMessage" name="fullTripMessage" required placeholder=" " rows="3"></textarea>
+                  <label for="settingsFullTripMessage">Trip Full Message</label>
+                </div>
+
+                <div class="floating-label">
+                  <textarea id="settingsRequestReceivedMessage" name="requestReceivedMessage" required placeholder=" " rows="3"></textarea>
+                  <label for="settingsRequestReceivedMessage">Request Confirmation Message</label>
+                </div>
+
+                <button class="btn btn-primary" type="submit">Save Site Settings</button>
+                <div class="status" data-officer-settings-status hidden></div>
+              </form>
+            </article>
+
             <!-- Edit Trip -->
             <article class="card">
               <h2>Edit Trip</h2>
@@ -334,6 +397,13 @@
                   <h3>Approved Roster</h3>
                   <ul class="requests-list" data-requests-approved>
                     <li class="requests-empty">Select a trip to view roster.</li>
+                  </ul>
+                </section>
+
+                <section class="requests-column">
+                  <h3>Declined</h3>
+                  <ul class="requests-list" data-requests-declined>
+                    <li class="requests-empty">Select a trip to view declined requests.</li>
                   </ul>
                 </section>
               </div>

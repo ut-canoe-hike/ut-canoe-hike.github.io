@@ -113,12 +113,38 @@ which calls `POST /api/sync` with the officer passcode.
 | POST | /api/requests | Public | Submit trip join request |
 | POST | /api/requests/by-trip | Officer | List requests for one trip |
 | PATCH | /api/requests/:id/status | Officer | Update request status |
+| GET | /api/site-settings | Public | Read editable site settings |
+| POST | /api/site-settings | Officer | Update site settings |
 | POST | /api/suggest | Public | Submit trip suggestion |
 | POST | /api/officer/verify | Public | Verify officer passcode |
 | GET | /health | Public | Health check |
 
 Officer endpoints require `officerSecret` in the request body.
 Officer auth is a shared passcode (no Google OAuth).
+
+## Editable Site Settings
+
+The officer portal can now edit key public-site content without code changes.
+Data is stored in a `SiteSettings` tab in your Google Sheet.
+
+Expected columns:
+
+- `key`
+- `value`
+- `updatedAt`
+
+The Worker validates and serves these keys:
+
+- `contactEmail`
+- `volLinkUrl`
+- `groupMeUrl`
+- `meetingSchedule`
+- `meetingLocation`
+- `meetingNote`
+- `requestIntroMessage`
+- `meetingOnlyMessage`
+- `fullTripMessage`
+- `requestReceivedMessage`
 
 ## Troubleshooting
 

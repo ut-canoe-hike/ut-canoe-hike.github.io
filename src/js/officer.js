@@ -29,6 +29,19 @@ function normalizeSignupStatus(value) {
   throw new Error(`Invalid signup status: ${status || '(missing)'}`);
 }
 
+const SITE_SETTINGS_FIELDS = [
+  'contactEmail',
+  'volLinkUrl',
+  'groupMeUrl',
+  'meetingSchedule',
+  'meetingLocation',
+  'meetingNote',
+  'requestIntroMessage',
+  'meetingOnlyMessage',
+  'fullTripMessage',
+  'requestReceivedMessage',
+];
+
 // ============================================
 // Officer Portal
 // ============================================
@@ -47,6 +60,8 @@ function initOfficerPortal() {
   const editStatus = dashboard.querySelector('[data-officer-edit-status]');
   const deleteForm = dashboard.querySelector('[data-officer-delete-form]');
   const deleteStatus = dashboard.querySelector('[data-officer-delete-status]');
+  const settingsForm = dashboard.querySelector('[data-officer-settings-form]');
+  const settingsStatus = dashboard.querySelector('[data-officer-settings-status]');
   const syncButton = dashboard.querySelector('[data-officer-sync-button]');
   const syncStatus = dashboard.querySelector('[data-officer-sync-status]');
 
@@ -57,6 +72,7 @@ function initOfficerPortal() {
   const requestsBoard = dashboard.querySelector('[data-officer-requests-board]');
   const pendingList = dashboard.querySelector('[data-requests-pending]');
   const approvedList = dashboard.querySelector('[data-requests-approved]');
+  const declinedList = dashboard.querySelector('[data-requests-declined]');
 
   const timeZone = getDisplayTimeZone();
 
@@ -162,6 +178,26 @@ function initOfficerPortal() {
     };
   }
 
+  function fillSiteSettingsForm(settings) {
+    if (!settingsForm || !settings || typeof settings !== 'object') return;
+    for (const key of SITE_SETTINGS_FIELDS) {
+      const field = settingsForm.elements.namedItem(key);
+      if (!field || !('value' in field)) continue;
+      const value = settings[key];
+      field.value = typeof value === 'string' ? value : '';
+    }
+  }
+
+  function collectSiteSettingsPayload(form) {
+    const settings = {};
+    for (const key of SITE_SETTINGS_FIELDS) {
+      const field = form.elements.namedItem(key);
+      if (!field || !('value' in field)) continue;
+      settings[key] = field.value.trim();
+    }
+    return settings;
+  }
+
   function fillEditForm(trip) {
     if (!editForm || !trip) return;
     editForm.title.value = trip.title || '';
@@ -215,7 +251,11 @@ function initOfficerPortal() {
     if (!listEl) return;
 
     if (!requests.length) {
-      const emptyMessage = kind === 'pending' ? 'No pending requests.' : 'No approved members yet.';
+      const emptyMessage = kind === 'pending'
+        ? 'No pending requests.'
+        : kind === 'approved'
+          ? 'No approved members yet.'
+          : 'No declined requests.';
       listEl.innerHTML = `<li class="requests-empty">${emptyMessage}</li>`;
       return;
     }
@@ -243,10 +283,15 @@ function initOfficerPortal() {
           <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
           <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
         `
-        : `
-          <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move Back</button>
-          <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
-        `;
+        : kind === 'approved'
+          ? `
+            <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move to Pending</button>
+            <button class="btn btn-outline btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="DECLINED" ${canMutate ? '' : 'disabled'}>Decline</button>
+          `
+          : `
+            <button class="btn btn-primary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="APPROVED" ${canMutate ? '' : 'disabled'}>Approve</button>
+            <button class="btn btn-secondary btn-sm" type="button" data-request-id="${safeRequestId}" data-next-status="PENDING" ${canMutate ? '' : 'disabled'}>Move to Pending</button>
+          `;
 
       return `
         <li class="request-item">
@@ -274,6 +319,7 @@ function initOfficerPortal() {
     if (!tripId) {
       if (pendingList) pendingList.innerHTML = '<li class="requests-empty">Select a trip to view requests.</li>';
       if (approvedList) approvedList.innerHTML = '<li class="requests-empty">Select a trip to view roster.</li>';
+      if (declinedList) declinedList.innerHTML = '<li class="requests-empty">Select a trip to view declined requests.</li>';
       if (requestsStatus) {
         requestsStatus.hidden = true;
       }
@@ -290,10 +336,16 @@ function initOfficerPortal() {
       const requests = data.requests;
       const pending = requests.filter((req) => req.status === 'PENDING');
       const approved = requests.filter((req) => req.status === 'APPROVED');
+      const declined = requests.filter((req) => req.status === 'DECLINED');
 
       renderRequestList(pendingList, pending, 'pending');
       renderRequestList(approvedList, approved, 'approved');
-      setStatus(requestsStatus, 'ok', `Loaded ${pending.length} pending and ${approved.length} approved.`);
+      renderRequestList(declinedList, declined, 'declined');
+      setStatus(
+        requestsStatus,
+        'ok',
+        `Loaded ${pending.length} pending, ${approved.length} approved, and ${declined.length} declined.`
+      );
     } catch (err) {
       if (isNotFoundError(err)) {
         setStatus(
@@ -306,6 +358,22 @@ function initOfficerPortal() {
       }
       if (pendingList) pendingList.innerHTML = '<li class="requests-empty">Unable to load pending requests.</li>';
       if (approvedList) approvedList.innerHTML = '<li class="requests-empty">Unable to load roster.</li>';
+      if (declinedList) declinedList.innerHTML = '<li class="requests-empty">Unable to load declined requests.</li>';
+    }
+  }
+
+  async function loadEditableSiteSettings() {
+    if (!officerSecret || !settingsForm) return;
+    setStatus(settingsStatus, '', 'Loading site settings...');
+    try {
+      const data = await api('GET', '/api/site-settings');
+      if (!data?.settings || typeof data.settings !== 'object') {
+        throw new Error('Invalid site settings response.');
+      }
+      fillSiteSettingsForm(data.settings);
+      setStatus(settingsStatus, 'ok', 'Site settings loaded.');
+    } catch (err) {
+      setStatus(settingsStatus, 'err', getErrorMessage(err, 'Unable to load site settings.'));
     }
   }
 
@@ -411,12 +479,34 @@ function initOfficerPortal() {
 
     try {
       await api('POST', '/api/officer/verify', { officerSecret: secret });
-      officerSecret = secret;
-      setStatus(loginStatus, 'ok', 'Access granted.');
-      showDashboard();
-      await loadAdminTrips();
     } catch (err) {
       setStatus(loginStatus, 'err', getErrorMessage(err, 'Not authorized.'));
+      return;
+    }
+
+    officerSecret = secret;
+    setStatus(loginStatus, 'ok', 'Access granted.');
+    showDashboard();
+    await Promise.allSettled([loadAdminTrips(), loadEditableSiteSettings()]);
+  });
+
+  settingsForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!officerSecret) return;
+    setStatus(settingsStatus, '', 'Saving settings...');
+
+    try {
+      const data = await api('POST', '/api/site-settings', {
+        officerSecret,
+        settings: collectSiteSettingsPayload(settingsForm),
+      });
+      if (!data?.settings || typeof data.settings !== 'object') {
+        throw new Error('Invalid settings response.');
+      }
+      fillSiteSettingsForm(data.settings);
+      setStatus(settingsStatus, 'ok', 'Site settings saved.');
+    } catch (err) {
+      setStatus(settingsStatus, 'err', getErrorMessage(err, 'Unable to save site settings.'));
     }
   });
 

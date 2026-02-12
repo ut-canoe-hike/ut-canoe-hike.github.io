@@ -9,7 +9,9 @@ import {
   formatDateLabel,
   formatTimeLabel,
   escapeHTML,
-  setStatus
+  setStatus,
+  getSiteSetting,
+  loadSiteSettings
 } from './core.js';
 import { initScrollAnimations, initCardHoverEffects } from './animations.js';
 
@@ -85,6 +87,11 @@ function getErrorMessage(err, fallback) {
   return err instanceof Error && err.message ? err.message : fallback;
 }
 
+function getPanelMessage(key, fallback) {
+  const value = getSiteSetting(key);
+  return value || fallback;
+}
+
 // ============================================
 // Skeleton Loading
 // ============================================
@@ -143,9 +150,17 @@ function createTripCardHTML(trip, timeZone, includeSignupAction = false) {
     ? `difficulty-badge difficulty-badge--${trip.difficulty.toLowerCase()}`
     : '';
   const actionMeta = getSignupActionMeta(trip);
+  const fullTripTitle = actionMeta.mode === 'full'
+    ? escapeHTML(
+      getPanelMessage(
+        'fullTripMessage',
+        'This trip is currently full. Please check back for future trips.'
+      )
+    )
+    : '';
 
   const actionBtn = includeSignupAction
-    ? `<button class="${actionMeta.buttonClass}" type="button" ${actionMeta.disabled ? 'disabled aria-disabled="true"' : 'data-signup-trigger'}>${actionMeta.label}</button>`
+    ? `<button class="${actionMeta.buttonClass}" type="button" ${actionMeta.disabled ? `disabled aria-disabled="true" title="${fullTripTitle}"` : 'data-signup-trigger'}>${actionMeta.label}</button>`
     : '';
 
   return `
@@ -321,20 +336,24 @@ function initSignupPanel() {
   const gearField = form.querySelector('[data-gear-field]');
   const gearOptions = form.querySelector('[data-gear-options]');
 
+  loadSiteSettings().catch(() => {
+    // Keep static copy when settings are unavailable.
+  });
+
   function setPanelMode(mode) {
     const submitBtn = form.querySelector('[data-panel-submit]');
 
     if (mode === 'meeting') {
       titleEl.textContent = 'Attend Meeting to Sign Up';
       messageEl.hidden = false;
-      messageEl.innerHTML = '<p>This trip is meeting sign-up only. Please attend a weekly meeting to request a spot.</p>';
+      messageEl.innerHTML = `<p>${escapeHTML(getPanelMessage('meetingOnlyMessage', 'This trip is meeting sign-up only. Please attend a weekly meeting to request a spot.'))}</p>`;
       form.hidden = true;
       return;
     }
 
     titleEl.textContent = 'Request to Join';
     messageEl.hidden = false;
-    messageEl.innerHTML = '<p>Submit your request below. Officers review requests before confirming rosters.</p>';
+    messageEl.innerHTML = `<p>${escapeHTML(getPanelMessage('requestIntroMessage', 'Submit your request below. Officers review requests before confirming rosters.'))}</p>`;
     form.hidden = false;
     if (submitBtn) submitBtn.textContent = 'Submit Request';
   }
@@ -360,7 +379,14 @@ function initSignupPanel() {
         notes: form.notes.value.trim()
       });
 
-      setStatus(statusEl, 'ok', 'Request received. Officers will review it; this is not a confirmed spot.');
+      setStatus(
+        statusEl,
+        'ok',
+        getPanelMessage(
+          'requestReceivedMessage',
+          'Request received. Officers will review it; this is not a confirmed spot.'
+        )
+      );
       form.reset();
       setTimeout(closePanel, 2400);
     } catch (err) {

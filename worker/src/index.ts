@@ -12,6 +12,7 @@ import {
 import { createRequest, listRequestsByTrip, updateRequestStatus } from './handlers/requests';
 import { submitSuggestion } from './handlers/suggest';
 import { verifyOfficer } from './handlers/officer';
+import { getSiteSettings, updateSiteSettings } from './handlers/settings';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -57,6 +58,11 @@ export default {
         const requestId = path.split('/')[3];
         const body = await parseJson<{ officerSecret?: string; status?: string }>(request);
         response = await updateRequestStatus(env, requestId, body);
+      } else if (path === '/api/site-settings' && method === 'GET') {
+        response = await getSiteSettings(env);
+      } else if (path === '/api/site-settings' && method === 'POST') {
+        const body = await parseJson<{ officerSecret?: string; settings?: Record<string, unknown> }>(request);
+        response = await updateSiteSettings(env, body);
       } else if (path === '/api/suggest' && method === 'POST') {
         const body = await parseJson<SuggestionInput>(request);
         response = await submitSuggestion(env, body);
