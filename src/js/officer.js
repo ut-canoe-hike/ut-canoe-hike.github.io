@@ -1,6 +1,6 @@
 /**
  * officer.js — Officer portal: trip tools and request roster management
- * Loaded only on officer.html
+ * Loaded only on officer and officer-settings pages
  */
 
 import {
@@ -48,10 +48,6 @@ const SITE_SETTINGS_FIELDS = [
   'requestReceivedMessage',
 ];
 
-// ============================================
-// Officer Portal
-// ============================================
-
 function initOfficerPortal() {
   const loginSection = document.querySelector('[data-officer-login]');
   const dashboard = document.querySelector('[data-officer-dashboard]');
@@ -60,10 +56,13 @@ function initOfficerPortal() {
   const loginForm = loginSection.querySelector('[data-officer-login-form]');
   const loginStatus = loginSection.querySelector('[data-officer-login-status]');
 
-  const createForm = dashboard.querySelector('[data-officer-create-form]');
-  const createStatus = dashboard.querySelector('[data-officer-create-status]');
-  const editForm = dashboard.querySelector('[data-officer-edit-form]');
-  const editStatus = dashboard.querySelector('[data-officer-edit-status]');
+  const tripForm = dashboard.querySelector('[data-officer-trip-form]');
+  const tripStatus = dashboard.querySelector('[data-officer-trip-status]');
+  const tripModeSelect = dashboard.querySelector('[data-trip-mode-select]');
+  const tripSelectRow = dashboard.querySelector('[data-trip-select-row]');
+  const tripSelect = dashboard.querySelector('[data-trip-select]');
+  const tripSubmitLabel = dashboard.querySelector('[data-trip-submit-label]');
+
   const deleteForm = dashboard.querySelector('[data-officer-delete-form]');
   const deleteStatus = dashboard.querySelector('[data-officer-delete-status]');
   const settingsForm = dashboard.querySelector('[data-officer-settings-form]');
@@ -71,7 +70,6 @@ function initOfficerPortal() {
   const syncButton = dashboard.querySelector('[data-officer-sync-button]');
   const syncStatus = dashboard.querySelector('[data-officer-sync-status]');
 
-  const editSelect = dashboard.querySelector('[data-edit-trip-select]');
   const deleteSelect = dashboard.querySelector('[data-delete-trip-select]');
   const requestsTripSelect = dashboard.querySelector('[data-requests-trip-select]');
   const requestsStatus = dashboard.querySelector('[data-officer-requests-status]');
@@ -86,8 +84,12 @@ function initOfficerPortal() {
   let activeRequestsTripId = '';
   const tripsById = new Map();
   const dashboardHash = dashboard.dataset.officerHash || 'manage';
-  const shouldLoadTrips = Boolean(createForm || editForm || deleteForm || requestsTripSelect);
+  const shouldLoadTrips = Boolean(tripForm || deleteForm || requestsTripSelect);
   const shouldLoadSettings = Boolean(settingsForm);
+
+  function getTripMode() {
+    return tripModeSelect?.value === 'EDIT' ? 'EDIT' : 'CREATE';
+  }
 
   function showDashboard() {
     loginSection.classList.add('is-hidden');
@@ -187,6 +189,82 @@ function initOfficerPortal() {
     };
   }
 
+  function clearTripForm() {
+    if (!tripForm) return;
+    tripForm.reset();
+    if (tripForm.signupStatus) {
+      tripForm.signupStatus.value = 'REQUEST_OPEN';
+    }
+    setGearCheckboxes(tripForm, []);
+  }
+
+  function fillTripForm(trip) {
+    if (!tripForm || !trip) return;
+
+    tripForm.title.value = trip.title || '';
+    tripForm.activity.value = trip.activity || '';
+    tripForm.location.value = trip.location || '';
+    tripForm.difficulty.value = trip.difficulty || '';
+    tripForm.meetTime.value = trip.meetTime || '';
+    tripForm.meetPlace.value = trip.meetPlace || '';
+    tripForm.leaderName.value = trip.leaderName || '';
+    tripForm.leaderContact.value = trip.leaderContact || '';
+    tripForm.notes.value = trip.notes || '';
+    tripForm.signupStatus.value = normalizeSignupStatus(trip.signupStatus);
+
+    const startDate = trip.start ? new Date(trip.start) : null;
+    const endDate = trip.end ? new Date(trip.end) : null;
+
+    if (trip.isAllDay) {
+      tripForm.startDate.value = toDateInput(startDate);
+      if (endDate && !Number.isNaN(endDate.getTime())) {
+        const inclusiveEnd = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
+        tripForm.endDate.value = toDateInput(inclusiveEnd);
+      } else {
+        tripForm.endDate.value = '';
+      }
+      tripForm.startTime.value = '';
+      tripForm.endTime.value = '';
+    } else {
+      tripForm.startDate.value = toDateInput(startDate);
+      tripForm.startTime.value = toTimeInput(startDate);
+      tripForm.endDate.value = toDateInput(endDate || startDate);
+      tripForm.endTime.value = toTimeInput(endDate);
+    }
+
+    setGearCheckboxes(tripForm, trip.gearAvailable || []);
+  }
+
+  function updateTripFormMode() {
+    if (!tripModeSelect) return;
+    const mode = getTripMode();
+
+    if (tripSubmitLabel) {
+      tripSubmitLabel.textContent = mode === 'EDIT' ? 'Save Changes' : 'Create Trip';
+    }
+
+    if (tripSelectRow) {
+      tripSelectRow.hidden = mode !== 'EDIT';
+    }
+
+    if (tripSelect) {
+      tripSelect.required = mode === 'EDIT';
+    }
+
+    if (mode === 'CREATE') {
+      clearTripForm();
+      if (tripSelect) {
+        tripSelect.value = '';
+      }
+    } else if (tripSelect?.value && tripsById.has(tripSelect.value)) {
+      fillTripForm(tripsById.get(tripSelect.value));
+    }
+
+    if (tripStatus) {
+      tripStatus.hidden = true;
+    }
+  }
+
   function fillSiteSettingsForm(settings) {
     if (!settingsForm || !settings || typeof settings !== 'object') return;
     for (const key of SITE_SETTINGS_FIELDS) {
@@ -219,42 +297,6 @@ function initOfficerPortal() {
       return `${fieldLabel} must start with https://`;
     }
     return '';
-  }
-
-  function fillEditForm(trip) {
-    if (!editForm || !trip) return;
-    editForm.title.value = trip.title || '';
-    editForm.activity.value = trip.activity || '';
-    editForm.location.value = trip.location || '';
-    editForm.difficulty.value = trip.difficulty || '';
-    editForm.meetTime.value = trip.meetTime || '';
-    editForm.meetPlace.value = trip.meetPlace || '';
-    editForm.leaderName.value = trip.leaderName || '';
-    editForm.leaderContact.value = trip.leaderContact || '';
-    editForm.notes.value = trip.notes || '';
-    editForm.signupStatus.value = normalizeSignupStatus(trip.signupStatus);
-
-    const startDate = trip.start ? new Date(trip.start) : null;
-    const endDate = trip.end ? new Date(trip.end) : null;
-
-    if (trip.isAllDay) {
-      editForm.startDate.value = toDateInput(startDate);
-      if (endDate && !Number.isNaN(endDate.getTime())) {
-        const inclusiveEnd = new Date(endDate.getTime() - 24 * 60 * 60 * 1000);
-        editForm.endDate.value = toDateInput(inclusiveEnd);
-      } else {
-        editForm.endDate.value = '';
-      }
-      editForm.startTime.value = '';
-      editForm.endTime.value = '';
-    } else {
-      editForm.startDate.value = toDateInput(startDate);
-      editForm.startTime.value = toTimeInput(startDate);
-      editForm.endDate.value = toDateInput(endDate || startDate);
-      editForm.endTime.value = toTimeInput(endDate);
-    }
-
-    setGearCheckboxes(editForm, trip.gearAvailable || []);
   }
 
   function formatRequestSubmittedAt(value) {
@@ -291,7 +333,7 @@ function initOfficerPortal() {
         throw new Error(`Request ${request.requestId} has invalid gearNeeded format.`);
       }
       const safeRequestId = escapeHTML(String(request.requestId));
-      const gear = Array.isArray(request.gearNeeded) && request.gearNeeded.length
+      const gear = request.gearNeeded.length
         ? request.gearNeeded.map(item => escapeHTML(String(item))).join(', ')
         : 'None listed';
       const notes = request.notes ? escapeHTML(String(request.notes)) : 'No notes';
@@ -342,9 +384,7 @@ function initOfficerPortal() {
       if (pendingList) pendingList.innerHTML = '<li class="requests-empty">Select a trip to view requests.</li>';
       if (approvedList) approvedList.innerHTML = '<li class="requests-empty">Select a trip to view roster.</li>';
       if (declinedList) declinedList.innerHTML = '<li class="requests-empty">Select a trip to view declined requests.</li>';
-      if (requestsStatus) {
-        requestsStatus.hidden = true;
-      }
+      if (requestsStatus) requestsStatus.hidden = true;
       return;
     }
 
@@ -355,10 +395,10 @@ function initOfficerPortal() {
       if (!Array.isArray(data.requests)) {
         throw new Error('Invalid API response: requests list is missing.');
       }
-      const requests = data.requests;
-      const pending = requests.filter((req) => req.status === 'PENDING');
-      const approved = requests.filter((req) => req.status === 'APPROVED');
-      const declined = requests.filter((req) => req.status === 'DECLINED');
+
+      const pending = data.requests.filter((req) => req.status === 'PENDING');
+      const approved = data.requests.filter((req) => req.status === 'APPROVED');
+      const declined = data.requests.filter((req) => req.status === 'DECLINED');
 
       renderRequestList(pendingList, pending, 'pending');
       renderRequestList(approvedList, approved, 'approved');
@@ -399,9 +439,9 @@ function initOfficerPortal() {
   async function loadAdminTrips() {
     if (!officerSecret) return;
 
-    if (editSelect) {
-      editSelect.disabled = true;
-      editSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
+    if (tripSelect) {
+      tripSelect.disabled = true;
+      tripSelect.innerHTML = '<option value="" selected disabled>Loading trips...</option>';
     }
     if (deleteSelect) {
       deleteSelect.disabled = true;
@@ -418,15 +458,20 @@ function initOfficerPortal() {
       if (!Array.isArray(data.trips)) {
         throw new Error('Invalid API response: trips list is missing.');
       }
+
       const trips = data.trips;
       for (const trip of trips) {
         trip.signupStatus = normalizeSignupStatus(trip.signupStatus);
         tripsById.set(trip.tripId, trip);
       }
 
-      populateSelect(editSelect, trips);
+      populateSelect(tripSelect, trips);
       populateSelect(deleteSelect, trips);
       populateSelect(requestsTripSelect, trips);
+
+      if (getTripMode() === 'EDIT' && tripSelect?.value && tripsById.has(tripSelect.value)) {
+        fillTripForm(tripsById.get(tripSelect.value));
+      }
 
       if (activeRequestsTripId && tripsById.has(activeRequestsTripId) && requestsTripSelect) {
         requestsTripSelect.value = activeRequestsTripId;
@@ -438,18 +483,20 @@ function initOfficerPortal() {
       }
     } catch (err) {
       const message = getErrorMessage(err, 'Unable to load trips.');
-      if (editStatus) setStatus(editStatus, 'err', message);
+      if (tripStatus) setStatus(tripStatus, 'err', message);
       if (deleteStatus) setStatus(deleteStatus, 'err', message);
       if (requestsStatus) setStatus(requestsStatus, 'err', message);
     }
   }
 
-  if (editSelect) {
-    editSelect.addEventListener('change', () => {
-      const trip = tripsById.get(editSelect.value);
-      fillEditForm(trip);
-    });
-  }
+  tripModeSelect?.addEventListener('change', () => {
+    updateTripFormMode();
+  });
+
+  tripSelect?.addEventListener('change', () => {
+    const trip = tripsById.get(tripSelect.value);
+    fillTripForm(trip);
+  });
 
   requestsTripSelect?.addEventListener('change', () => {
     loadTripRequests(requestsTripSelect.value);
@@ -498,6 +545,8 @@ function initOfficerPortal() {
     officerSecret = secret;
     setStatus(loginStatus, 'ok', 'Access granted.');
     showDashboard();
+    updateTripFormMode();
+
     const loaders = [];
     if (shouldLoadTrips) loaders.push(loadAdminTrips());
     if (shouldLoadSettings) loaders.push(loadEditableSiteSettings());
@@ -541,39 +590,34 @@ function initOfficerPortal() {
     }
   });
 
-  createForm?.addEventListener('submit', async (event) => {
+  tripForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!officerSecret) return;
-    setStatus(createStatus, '', 'Submitting...');
+
+    const mode = getTripMode();
+    if (mode === 'EDIT' && !tripSelect?.value) {
+      setStatus(tripStatus, 'err', 'Select a trip to edit.');
+      return;
+    }
+
+    setStatus(tripStatus, '', mode === 'EDIT' ? 'Saving...' : 'Submitting...');
 
     try {
-      const data = await api('POST', '/api/trips', collectTripPayload(createForm));
-      setStatus(createStatus, 'ok', `Trip created! Join link: ${data.requestUrl}`);
-      createForm.reset();
-      if (createForm.signupStatus) {
-        createForm.signupStatus.value = 'REQUEST_OPEN';
+      if (mode === 'EDIT') {
+        await api('PATCH', `/api/trips/${encodeURIComponent(tripSelect.value)}`, collectTripPayload(tripForm));
+        setStatus(tripStatus, 'ok', 'Changes saved.');
+      } else {
+        const data = await api('POST', '/api/trips', collectTripPayload(tripForm));
+        setStatus(tripStatus, 'ok', `Trip created! Join link: ${data.requestUrl}`);
+        clearTripForm();
       }
       await loadAdminTrips();
     } catch (err) {
-      setStatus(createStatus, 'err', getErrorMessage(err, 'Trip submission failed.'));
-    }
-  });
-
-  editForm?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!officerSecret) return;
-    if (!editSelect?.value) {
-      setStatus(editStatus, 'err', 'Select a trip to edit.');
-      return;
-    }
-    setStatus(editStatus, '', 'Saving...');
-
-    try {
-      await api('PATCH', `/api/trips/${encodeURIComponent(editSelect.value)}`, collectTripPayload(editForm));
-      setStatus(editStatus, 'ok', 'Changes saved.');
-      await loadAdminTrips();
-    } catch (err) {
-      setStatus(editStatus, 'err', getErrorMessage(err, 'Update failed.'));
+      setStatus(
+        tripStatus,
+        'err',
+        getErrorMessage(err, mode === 'EDIT' ? 'Update failed.' : 'Trip submission failed.')
+      );
     }
   });
 
@@ -584,6 +628,7 @@ function initOfficerPortal() {
       setStatus(deleteStatus, 'err', 'Select a trip to delete.');
       return;
     }
+
     const ok = window.confirm('Delete this trip? This cannot be undone.');
     if (!ok) return;
     setStatus(deleteStatus, '', 'Deleting...');
@@ -612,10 +657,6 @@ function initOfficerPortal() {
     }
   });
 }
-
-// ============================================
-// Initialize Officer Module
-// ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
   initOfficerPortal();

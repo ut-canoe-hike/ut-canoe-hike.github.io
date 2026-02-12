@@ -58,16 +58,32 @@
 
           <div class="officer-stack">
             <article class="card card--ornate officer-card--trip">
-              <h2>Create Trip</h2>
-              <form class="form trip-form" data-officer-create-form>
+              <h2>Trip Form</h2>
+              <form class="form trip-form" data-officer-trip-form>
                 <div class="row">
-                  <div class="field field--legend">
-                    <label for="createTitle">Trip Title</label>
-                    <input id="createTitle" name="title" required placeholder=" " />
+                  <div class="field">
+                    <label for="tripMode">Mode</label>
+                    <select id="tripMode" data-trip-mode-select>
+                      <option value="CREATE" selected>Create New Trip</option>
+                      <option value="EDIT">Edit Existing Trip</option>
+                    </select>
+                  </div>
+                  <div class="field" data-trip-select-row hidden>
+                    <label for="tripEditId">Select Trip</label>
+                    <select id="tripEditId" data-trip-select>
+                      <option value="" disabled selected>Loading trips...</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="field">
+                    <label for="tripTitle">Trip Title</label>
+                    <input id="tripTitle" name="title" required placeholder="Trip Title" />
                   </div>
                   <div class="field">
-                    <label for="createActivity">Activity</label>
-                    <select id="createActivity" name="activity">
+                    <label for="tripActivity">Activity</label>
+                    <select id="tripActivity" name="activity">
                       <option value="">Select...</option>
                       <option value="Hike">Hike</option>
                       <option value="Backpacking">Backpacking</option>
@@ -81,34 +97,34 @@
 
                 <div class="row">
                   <div class="field">
-                    <label for="createStartDate">Start Date</label>
-                    <input id="createStartDate" name="startDate" type="date" required placeholder="mm/dd/yyyy" />
+                    <label for="tripStartDate">Start Date</label>
+                    <input id="tripStartDate" name="startDate" type="date" required placeholder="mm/dd/yyyy" />
                   </div>
                   <div class="field">
-                    <label for="createStartTime">Start Time</label>
-                    <input id="createStartTime" name="startTime" type="time" placeholder="--:-- --" />
+                    <label for="tripStartTime">Start Time</label>
+                    <input id="tripStartTime" name="startTime" type="time" placeholder="--:-- --" />
                   </div>
                 </div>
 
                 <div class="row">
                   <div class="field">
-                    <label for="createEndDate">End Date</label>
-                    <input id="createEndDate" name="endDate" type="date" placeholder="mm/dd/yyyy" />
+                    <label for="tripEndDate">End Date</label>
+                    <input id="tripEndDate" name="endDate" type="date" placeholder="mm/dd/yyyy" />
                   </div>
                   <div class="field">
-                    <label for="createEndTime">End Time</label>
-                    <input id="createEndTime" name="endTime" type="time" placeholder="--:-- --" />
+                    <label for="tripEndTime">End Time</label>
+                    <input id="tripEndTime" name="endTime" type="time" placeholder="--:-- --" />
                   </div>
                 </div>
 
                 <div class="row">
-                  <div class="field field--legend">
-                    <label for="createLocation">Location</label>
-                    <input id="createLocation" name="location" placeholder=" " />
+                  <div class="field">
+                    <label for="tripLocation">Location</label>
+                    <input id="tripLocation" name="location" placeholder="Location" />
                   </div>
                   <div class="field">
-                    <label for="createDifficulty">Difficulty</label>
-                    <select id="createDifficulty" name="difficulty">
+                    <label for="tripDifficulty">Difficulty</label>
+                    <select id="tripDifficulty" name="difficulty">
                       <option value="">Select...</option>
                       <option value="Easy">Easy</option>
                       <option value="Moderate">Moderate</option>
@@ -119,8 +135,8 @@
                 </div>
 
                 <div class="field">
-                  <label for="createSignupStatus">Signup Button Status</label>
-                  <select id="createSignupStatus" name="signupStatus" required>
+                  <label for="tripSignupStatus">Signup Button Status</label>
+                  <select id="tripSignupStatus" name="signupStatus" required>
                     <option value="REQUEST_OPEN">Request to Join</option>
                     <option value="MEETING_ONLY">Attend Meeting to Sign Up</option>
                     <option value="FULL">Trip Full</option>
@@ -128,30 +144,30 @@
                 </div>
 
                 <div class="row">
-                  <div class="field field--legend">
-                    <label for="createMeetTime">Meet Time</label>
-                    <input id="createMeetTime" name="meetTime" placeholder=" " />
+                  <div class="field">
+                    <label for="tripMeetTime">Meet Time</label>
+                    <input id="tripMeetTime" name="meetTime" placeholder="Meet Time" />
                   </div>
-                  <div class="field field--legend">
-                    <label for="createMeetPlace">Meet Place</label>
-                    <input id="createMeetPlace" name="meetPlace" placeholder=" " />
+                  <div class="field">
+                    <label for="tripMeetPlace">Meet Place</label>
+                    <input id="tripMeetPlace" name="meetPlace" placeholder="Meet Place" />
                   </div>
                 </div>
 
                 <div class="row">
-                  <div class="field field--legend">
-                    <label for="createLeaderName">Leader Name</label>
-                    <input id="createLeaderName" name="leaderName" placeholder=" " />
+                  <div class="field">
+                    <label for="tripLeaderName">Leader Name</label>
+                    <input id="tripLeaderName" name="leaderName" placeholder="Leader Name" />
                   </div>
-                  <div class="field field--legend">
-                    <label for="createLeaderContact">Leader Contact</label>
-                    <input id="createLeaderContact" name="leaderContact" placeholder=" " />
+                  <div class="field">
+                    <label for="tripLeaderContact">Leader Contact</label>
+                    <input id="tripLeaderContact" name="leaderContact" placeholder="Leader Contact" />
                   </div>
                 </div>
 
-                <div class="field field--legend field--textarea">
-                  <label for="createNotes">Notes</label>
-                  <textarea id="createNotes" name="notes" placeholder=" " rows="3"></textarea>
+                <div class="field field--textarea">
+                  <label for="tripNotes">Notes</label>
+                  <textarea id="tripNotes" name="notes" placeholder="Trip notes" rows="3"></textarea>
                 </div>
 
                 <fieldset class="field">
@@ -165,128 +181,8 @@
                   </div>
                 </fieldset>
 
-                <button class="btn btn-primary" type="submit">Create Trip</button>
-                <div class="status" data-officer-create-status hidden></div>
-              </form>
-            </article>
-
-            <article class="card officer-card--trip">
-              <h2>Edit Trip</h2>
-              <form class="form trip-form" data-officer-edit-form>
-                <div class="field">
-                  <label for="editTripId">Select Trip</label>
-                  <select id="editTripId" name="tripId" data-edit-trip-select required>
-                    <option value="" disabled selected>Loading trips...</option>
-                  </select>
-                </div>
-
-                <div class="row">
-                  <div class="field field--legend">
-                    <label for="editTitle">Trip Title</label>
-                    <input id="editTitle" name="title" required placeholder=" " />
-                  </div>
-                  <div class="field">
-                    <label for="editActivity">Activity</label>
-                    <select id="editActivity" name="activity">
-                      <option value="">Select...</option>
-                      <option value="Hike">Hike</option>
-                      <option value="Backpacking">Backpacking</option>
-                      <option value="Canoe/Kayak">Canoe/Kayak</option>
-                      <option value="Camping">Camping</option>
-                      <option value="Climbing">Climbing</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="field">
-                    <label for="editStartDate">Start Date</label>
-                    <input id="editStartDate" name="startDate" type="date" required placeholder="mm/dd/yyyy" />
-                  </div>
-                  <div class="field">
-                    <label for="editStartTime">Start Time</label>
-                    <input id="editStartTime" name="startTime" type="time" placeholder="--:-- --" />
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="field">
-                    <label for="editEndDate">End Date</label>
-                    <input id="editEndDate" name="endDate" type="date" placeholder="mm/dd/yyyy" />
-                  </div>
-                  <div class="field">
-                    <label for="editEndTime">End Time</label>
-                    <input id="editEndTime" name="endTime" type="time" placeholder="--:-- --" />
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="field field--legend">
-                    <label for="editLocation">Location</label>
-                    <input id="editLocation" name="location" placeholder=" " />
-                  </div>
-                  <div class="field">
-                    <label for="editDifficulty">Difficulty</label>
-                    <select id="editDifficulty" name="difficulty">
-                      <option value="">Select...</option>
-                      <option value="Easy">Easy</option>
-                      <option value="Moderate">Moderate</option>
-                      <option value="Hard">Hard</option>
-                      <option value="Varies">Varies</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label for="editSignupStatus">Signup Button Status</label>
-                  <select id="editSignupStatus" name="signupStatus" required>
-                    <option value="REQUEST_OPEN">Request to Join</option>
-                    <option value="MEETING_ONLY">Attend Meeting to Sign Up</option>
-                    <option value="FULL">Trip Full</option>
-                  </select>
-                </div>
-
-                <div class="row">
-                  <div class="field field--legend">
-                    <label for="editMeetTime">Meet Time</label>
-                    <input id="editMeetTime" name="meetTime" placeholder=" " />
-                  </div>
-                  <div class="field field--legend">
-                    <label for="editMeetPlace">Meet Place</label>
-                    <input id="editMeetPlace" name="meetPlace" placeholder=" " />
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="field field--legend">
-                    <label for="editLeaderName">Leader Name</label>
-                    <input id="editLeaderName" name="leaderName" placeholder=" " />
-                  </div>
-                  <div class="field field--legend">
-                    <label for="editLeaderContact">Leader Contact</label>
-                    <input id="editLeaderContact" name="leaderContact" placeholder=" " />
-                  </div>
-                </div>
-
-                <div class="field field--legend field--textarea">
-                  <label for="editNotes">Notes</label>
-                  <textarea id="editNotes" name="notes" placeholder=" " rows="3"></textarea>
-                </div>
-
-                <fieldset class="field">
-                  <legend>Club Gear Available</legend>
-                  <div class="checkbox-grid">
-                    <label class="checkbox"><input type="checkbox" name="gearAvailable" value="tent" /><span>Tent</span></label>
-                    <label class="checkbox"><input type="checkbox" name="gearAvailable" value="sleeping bag" /><span>Sleeping Bag</span></label>
-                    <label class="checkbox"><input type="checkbox" name="gearAvailable" value="sleeping pad" /><span>Sleeping Pad</span></label>
-                    <label class="checkbox"><input type="checkbox" name="gearAvailable" value="stove" /><span>Stove</span></label>
-                    <label class="checkbox"><input type="checkbox" name="gearAvailable" value="headlamp" /><span>Headlamp</span></label>
-                  </div>
-                </fieldset>
-
-                <button class="btn btn-primary" type="submit">Save Changes</button>
-                <div class="status" data-officer-edit-status hidden></div>
+                <button class="btn btn-primary" type="submit"><span data-trip-submit-label>Create Trip</span></button>
+                <div class="status" data-officer-trip-status hidden></div>
               </form>
             </article>
 

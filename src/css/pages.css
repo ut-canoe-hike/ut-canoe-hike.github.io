@@ -36,26 +36,15 @@
 
 .trip-form .row {
   gap: 1.15rem;
+  align-items: start;
 }
 
-.trip-form .field--legend {
-  position: relative;
-  padding-top: 0.4rem;
+.trip-form .field {
+  align-content: start;
 }
 
-.trip-form .field--legend > label {
-  position: absolute;
-  top: -0.36rem;
-  left: 0.9rem;
-  z-index: 1;
-  padding: 0 0.35rem;
-  background: var(--cream-light);
-  min-height: 0;
-  font-size: 0.65rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: var(--bark-mid);
+.trip-form .field > label {
+  min-height: 1.1rem;
 }
 
 .trip-form .field--textarea > textarea {
