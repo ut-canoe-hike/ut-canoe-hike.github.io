@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en" class="page-officer">
+  <head>
+    {{> head
+      title="Site Settings | Officer Portal | UT Canoe & Hiking Club"
+      description="Officer tools for managing editable public-site settings."
+    }}
+    <script type="module" src="/js/core.js"></script>
+    <script type="module" src="/js/animations.js"></script>
+    <script type="module" src="/js/officer.js"></script>
+  </head>
+  <body>
+    {{> header }}
+
+    <main id="main">
+      {{> hero-compact
+        heroTitle="Site Settings"
+        heroDescription="Log in to update links and core messaging shown across the public site."
+      }}
+
+      <section class="section section--alt" data-officer-login>
+        <div class="wrap wrap--narrow">
+          <article class="card card--center card--ornate card--portal">
+            <span class="section-kicker">Officer Login</span>
+            <h2>Enter Passcode</h2>
+            <p>Access site settings controls.</p>
+
+            <form class="form" data-officer-login-form>
+              <div class="sr-only" aria-hidden="true">
+                <label for="officerUsername">Username</label>
+                <input id="officerUsername" name="username" type="text" autocomplete="username" tabindex="-1" />
+              </div>
+
+              <div class="field">
+                <label for="officerSecret">Passcode</label>
+                <input id="officerSecret" name="officerSecret" type="password" required placeholder="Enter passcode" autocomplete="current-password" />
+              </div>
+
+              <button class="btn btn-primary" type="submit">Continue</button>
+              <div class="status" data-officer-login-status hidden></div>
+            </form>
+          </article>
+        </div>
+      </section>
+
+      <section class="section is-hidden" data-officer-dashboard data-officer-hash="settings">
+        <div class="wrap wrap--narrow">
+          <div class="section-header">
+            <span class="section-kicker">Operations</span>
+            <h2>Editable Content</h2>
+            <p>Update links and messaging shown on the public website.</p>
+            <div class="cta">
+              <a class="btn btn-ghost" href="/officer.html">Trip Tools</a>
+            </div>
+          </div>
+
+          <article class="card card--ornate card--portal">
+            <h2>Site Settings</h2>
+            <p>Changes save directly to the SiteSettings sheet.</p>
+
+            <form class="form" data-officer-settings-form>
+              <div class="row">
+                <div class="floating-label">
+                  <input id="settingsContactEmail" name="contactEmail" type="email" required placeholder=" " />
+                  <label for="settingsContactEmail">Contact Email</label>
+                </div>
+                <div class="floating-label">
+                  <input id="settingsVolLinkUrl" name="volLinkUrl" type="url" required placeholder="https://..." />
+                  <label for="settingsVolLinkUrl">VOLlink URL</label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="floating-label">
+                  <input id="settingsGroupMeUrl" name="groupMeUrl" type="url" required placeholder="https://..." />
+                  <label for="settingsGroupMeUrl">GroupMe URL</label>
+                </div>
+                <div class="floating-label">
+                  <input id="settingsMeetingSchedule" name="meetingSchedule" required placeholder=" " />
+                  <label for="settingsMeetingSchedule">Meeting Schedule Label</label>
+                </div>
+              </div>
+
+              <div class="floating-label">
+                <input id="settingsMeetingLocation" name="meetingLocation" required placeholder=" " />
+                <label for="settingsMeetingLocation">Meeting Location</label>
+              </div>
+
+              <div class="floating-label">
+                <textarea id="settingsMeetingNote" name="meetingNote" required placeholder=" " rows="3"></textarea>
+                <label for="settingsMeetingNote">Meeting Description</label>
+              </div>
+
+              <div class="floating-label">
+                <textarea id="settingsRequestIntroMessage" name="requestIntroMessage" required placeholder=" " rows="3"></textarea>
+                <label for="settingsRequestIntroMessage">Request Panel Intro Message</label>
+              </div>
+
+              <div class="floating-label">
+                <textarea id="settingsMeetingOnlyMessage" name="meetingOnlyMessage" required placeholder=" " rows="3"></textarea>
+                <label for="settingsMeetingOnlyMessage">Meeting-Only Message</label>
+              </div>
+
+              <div class="floating-label">
+                <textarea id="settingsFullTripMessage" name="fullTripMessage" required placeholder=" " rows="3"></textarea>
+                <label for="settingsFullTripMessage">Trip Full Message</label>
+              </div>
+
+              <div class="floating-label">
+                <textarea id="settingsRequestReceivedMessage" name="requestReceivedMessage" required placeholder=" " rows="3"></textarea>
+                <label for="settingsRequestReceivedMessage">Request Confirmation Message</label>
+              </div>
+
+              <button class="btn btn-primary" type="submit">Save Site Settings</button>
+              <div class="status" data-officer-settings-status hidden></div>
+            </form>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    {{> footer }}
+  </body>
+</html>

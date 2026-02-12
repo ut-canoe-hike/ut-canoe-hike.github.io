@@ -4,19 +4,78 @@
    ============================================ */
 
 /* ---------- Officer Dashboard ---------- */
-.page-officer .bento-grid--officer {
-  align-items: start;
-}
-
-/* Officer cards get darker poster frame */
 .page-officer .card--portal {
   border-width: 4px;
 }
 
-.page-officer .bento-grid--officer .bento-wide {
+.page-officer .hero--compact .hero-content h1 {
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  line-height: 1.03;
+  overflow-wrap: anywhere;
+}
+
+.officer-stack {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.6rem;
+  align-items: start;
+}
+
+.officer-stack > .card {
+  min-height: 100%;
+}
+
+.officer-card--requests {
   grid-column: 1 / -1;
-  max-width: none;
-  margin: 0;
+  min-height: auto;
+}
+
+.officer-card--compact .form {
+  align-content: start;
+}
+
+.trip-form .row {
+  gap: 1.15rem;
+}
+
+.trip-form .field--legend {
+  position: relative;
+  padding-top: 0.4rem;
+}
+
+.trip-form .field--legend > label {
+  position: absolute;
+  top: -0.36rem;
+  left: 0.9rem;
+  z-index: 1;
+  padding: 0 0.35rem;
+  background: var(--cream-light);
+  min-height: 0;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--bark-mid);
+}
+
+.trip-form .field--textarea > textarea {
+  min-height: 130px;
+}
+
+.trip-form input,
+.trip-form select,
+.trip-form textarea {
+  min-height: 58px;
+}
+
+@media (max-width: 1023px) {
+  .officer-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .officer-stack > .card {
+    min-height: auto;
+  }
 }
 
 .requests-board {

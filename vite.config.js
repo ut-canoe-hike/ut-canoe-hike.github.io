@@ -14,6 +14,7 @@ export default {
         about: resolve(__dirname, 'src/about.html'),
         suggest: resolve(__dirname, 'src/suggest.html'),
         officer: resolve(__dirname, 'src/officer.html'),
+        officerSettings: resolve(__dirname, 'src/officer-settings.html'),
       },
     },
   },

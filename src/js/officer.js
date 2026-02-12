@@ -85,12 +85,15 @@ function initOfficerPortal() {
   let officerSecret = '';
   let activeRequestsTripId = '';
   const tripsById = new Map();
+  const dashboardHash = dashboard.dataset.officerHash || 'manage';
+  const shouldLoadTrips = Boolean(createForm || editForm || deleteForm || requestsTripSelect);
+  const shouldLoadSettings = Boolean(settingsForm);
 
   function showDashboard() {
     loginSection.classList.add('is-hidden');
     dashboard.classList.remove('is-hidden');
-    if (window.location.hash !== '#manage') {
-      window.location.hash = 'manage';
+    if (window.location.hash !== `#${dashboardHash}`) {
+      window.location.hash = dashboardHash;
     }
   }
 
@@ -495,7 +498,10 @@ function initOfficerPortal() {
     officerSecret = secret;
     setStatus(loginStatus, 'ok', 'Access granted.');
     showDashboard();
-    await Promise.allSettled([loadAdminTrips(), loadEditableSiteSettings()]);
+    const loaders = [];
+    if (shouldLoadTrips) loaders.push(loadAdminTrips());
+    if (shouldLoadSettings) loaders.push(loadEditableSiteSettings());
+    await Promise.allSettled(loaders);
   });
 
   settingsForm?.addEventListener('submit', async (event) => {
