@@ -51,6 +51,11 @@
   align-content: start;
 }
 
+.trip-form [data-trip-select-row][hidden],
+.trip-form [data-trip-select-row].is-hidden {
+  display: none !important;
+}
+
 .trip-form .field > label {
   min-height: 1.1rem;
 }

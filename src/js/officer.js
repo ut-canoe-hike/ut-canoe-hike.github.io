@@ -238,20 +238,23 @@ function initOfficerPortal() {
   function updateTripFormMode() {
     if (!tripModeSelect) return;
     const mode = getTripMode();
+    const isEditMode = mode === "EDIT";
 
     if (tripSubmitLabel) {
       tripSubmitLabel.textContent = mode === 'EDIT' ? 'Save Changes' : 'Create Trip';
     }
 
     if (tripSelectRow) {
-      tripSelectRow.hidden = mode !== 'EDIT';
+      tripSelectRow.hidden = !isEditMode;
+      tripSelectRow.classList.toggle("is-hidden", !isEditMode);
+      tripSelectRow.setAttribute("aria-hidden", String(!isEditMode));
     }
 
     if (tripSelect) {
-      tripSelect.required = mode === 'EDIT';
+      tripSelect.required = isEditMode;
     }
 
-    if (mode === 'CREATE') {
+    if (!isEditMode) {
       clearTripForm();
       if (tripSelect) {
         tripSelect.value = '';
@@ -597,6 +600,7 @@ function initOfficerPortal() {
     if (!officerSecret) return;
 
     const mode = getTripMode();
+    const isEditMode = mode === "EDIT";
     if (mode === 'EDIT' && !tripSelect?.value) {
       setStatus(tripStatus, 'err', 'Select a trip to edit.');
       return;
