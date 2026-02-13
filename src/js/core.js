@@ -379,10 +379,6 @@ function initLinkPrefetch() {
     window.setTimeout(warmVisibleNavLinks, 500);
   }
 }
-function initPageLoad() {
-  document.body.classList.add('is-loaded');
-}
-
 
 // ============================================
 // Initialize Core
@@ -395,7 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileMenu();
   initHeaderScroll();
   initScrollProgress();
-  initPageLoad();
   initLinkPrefetch();
   if (pageUsesSiteSettings()) {
     loadSiteSettings().catch((err) => {

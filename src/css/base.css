@@ -149,15 +149,6 @@ body {
   overflow-x: hidden;
 }
 
-body.is-loaded {
-  animation: fadeInPage 500ms var(--ease-out) both;
-}
-
-@keyframes fadeInPage {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
 /* Subtle paper grain overlay (above section backgrounds) */
 body::before {
   content: '';
